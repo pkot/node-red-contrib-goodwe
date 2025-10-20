@@ -70,7 +70,9 @@ describe("goodwe node", function () {
             n2.on("input", function (msg) {
                 try {
                     expect(msg.payload).toBeDefined();
-                    expect(msg.payload.status).toBe("not_implemented");
+                    expect(msg.payload.success).toBe(true);
+                    expect(msg.payload.data).toBeDefined();
+                    expect(msg.payload.data.status).toBe("not_implemented");
                     done();
                 } catch(err) {
                     done(err);
