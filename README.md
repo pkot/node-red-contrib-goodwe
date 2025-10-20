@@ -169,6 +169,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Node-RED](https://nodered.org/) - Flow-based programming platform
 - GoodWe inverter community for protocol documentation
 
+## Documentation
+
+- [Feature Analysis Document](./docs/FEATURE_ANALYSIS.md) - Comprehensive analysis of the Python library features mapped to Node-RED
+- [Contributing Guide](./CONTRIBUTING.md) - How to contribute to this project
+- [Changelog](./CHANGELOG.md) - Version history and changes
+
 ## References
 
 - [GoodWe Python Library Documentation](https://github.com/marcelblijleven/goodwe)
