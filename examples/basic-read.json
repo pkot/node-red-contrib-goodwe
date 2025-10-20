@@ -1,0 +1,68 @@
+[
+    {
+        "id": "example-flow",
+        "type": "tab",
+        "label": "GoodWe Example",
+        "disabled": false,
+        "info": "Example flow for reading data from a GoodWe inverter"
+    },
+    {
+        "id": "inject-read",
+        "type": "inject",
+        "z": "example-flow",
+        "name": "Read inverter data",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "60",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "read",
+        "payloadType": "str",
+        "x": 140,
+        "y": 100,
+        "wires": [
+            [
+                "goodwe-node"
+            ]
+        ]
+    },
+    {
+        "id": "goodwe-node",
+        "type": "goodwe",
+        "z": "example-flow",
+        "name": "My GoodWe Inverter",
+        "host": "192.168.1.100",
+        "port": "8899",
+        "protocol": "udp",
+        "family": "ET",
+        "x": 350,
+        "y": 100,
+        "wires": [
+            [
+                "debug-node"
+            ]
+        ]
+    },
+    {
+        "id": "debug-node",
+        "type": "debug",
+        "z": "example-flow",
+        "name": "Display inverter data",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 570,
+        "y": 100,
+        "wires": []
+    }
+]
