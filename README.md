@@ -96,7 +96,7 @@ The node may also work with white-label inverters using the same communication p
 
 ### Prerequisites
 
-- Node.js >= 14.0.0
+- Node.js >= 20.0.0
 - npm >= 6.0.0
 
 ### Setup
