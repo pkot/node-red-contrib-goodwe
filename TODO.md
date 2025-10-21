@@ -15,7 +15,9 @@ This document tracks the implementation progress for porting the marcelblijleven
 
 ## In Progress 🚧
 
-Currently working on the implementation plan tracking issue.
+- [x] Node structure and configuration design (see [docs/NODE_DESIGN.md](./docs/NODE_DESIGN.md))
+- [x] Design specifications and TDD test plan
+- [ ] Core protocol implementation
 
 ## TODO 📋
 

@@ -36,19 +36,48 @@ module.exports = function(RED) {
             done = done || function(err) { if (err) node.error(err, msg); };
 
             try {
-                // TODO: Implement inverter communication
+                // Parse command from payload
+                let command = "read"; // Default command
+                if (typeof msg.payload === "string") {
+                    command = msg.payload;
+                } else if (typeof msg.payload === "object" && msg.payload.command) {
+                    command = msg.payload.command;
+                }
+
+                // Update status
                 node.status({ fill: "yellow", shape: "ring", text: "connecting..." });
 
-                // Placeholder for actual implementation
-                msg.payload = {
-                    status: "not_implemented",
-                    message: "GoodWe node is under development"
+                // TODO: Implement actual inverter communication
+                // For now, return structured response as per design spec
+                const response = {
+                    success: true,
+                    command: command,
+                    timestamp: new Date().toISOString(),
+                    data: {
+                        status: "not_implemented",
+                        message: "GoodWe node is under development"
+                    }
                 };
 
-                send(msg);
+                // Preserve original message properties (except payload)
+                const outputMsg = Object.assign({}, msg);
+                outputMsg.payload = response;
+                
+                // Set topic if not already present
+                if (!outputMsg.topic) {
+                    outputMsg.topic = `goodwe/${command}`;
+                }
+
+                // Temporary success status
+                node.status({ fill: "green", shape: "dot", text: "ok" });
+                setTimeout(() => {
+                    node.status({ fill: "grey", shape: "ring", text: "disconnected" });
+                }, 2000);
+
+                send(outputMsg);
                 done();
             } catch (err) {
-                node.status({ fill: "red", shape: "dot", text: "error" });
+                node.status({ fill: "red", shape: "ring", text: "error" });
                 done(err);
             }
         });
