@@ -113,8 +113,14 @@ npm install
 # Run all tests
 npm test
 
+# Run tests in watch mode
+npm test -- --watch
+
 # Run tests with coverage
 npm test -- --coverage
+
+# Run specific test file
+npm test -- test/goodwe.test.js
 
 # Run linter
 npm run lint
@@ -122,6 +128,12 @@ npm run lint
 # Fix linting issues
 npm run lint:fix
 ```
+
+See the **[Testing Guide](./docs/TESTING.md)** for comprehensive testing documentation, including:
+- TDD workflow and best practices
+- Using test utilities and mock data
+- Writing tests for Node-RED nodes
+- Offline development with mock inverter responses
 
 ### Project Structure
 

@@ -36,13 +36,30 @@ This document provides the foundation for understanding what features need to be
 
 **Status**: ✅ Complete
 
+### [TESTING.md](./TESTING.md)
+**Comprehensive Testing Guide**
+
+Complete guide for test-driven development in this project, including:
+- Test framework setup and configuration
+- Writing tests for Node-RED nodes
+- Using test utilities and mock data
+- TDD workflow (Red-Green-Refactor)
+- Mocking inverter responses for offline development
+- CI integration and coverage requirements
+- Best practices and troubleshooting
+
+This document is essential for all contributors to understand the testing approach.
+
+**Status**: ✅ Complete
+
 ## Using These Documents
 
 ### For Contributors
 
 1. **Start with NODE_DESIGN.md** to understand the overall architecture and design decisions
 2. **Reference FEATURE_ANALYSIS.md** when implementing specific protocol or sensor features
-3. Follow the TDD approach outlined in NODE_DESIGN.md section 6
+3. **Read TESTING.md** to understand the TDD workflow and testing practices
+4. Follow the TDD approach outlined in NODE_DESIGN.md section 6
 
 ### For Reviewers
 
@@ -65,6 +82,7 @@ These documents will be supplemented with user-facing documentation:
 |----------|---------|--------|--------------|
 | NODE_DESIGN.md | 1.0 | Complete | 2025-10-20 |
 | FEATURE_ANALYSIS.md | 1.0 | Complete | 2025-10-20 |
+| TESTING.md | 1.0 | Complete | 2025-10-21 |
 
 ## Contributing to Documentation
 

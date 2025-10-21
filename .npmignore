@@ -1,0 +1,36 @@
+# Exclude development files from npm package
+
+# Tests
+test/
+coverage/
+*.test.js
+
+# Development docs (keep user-facing docs)
+docs/TESTING.md
+docs/FEATURE_ANALYSIS.md
+docs/NODE_DESIGN.md
+docs/DIAGRAMS.md
+docs/DELIVERABLES.md
+
+# Development configs
+.eslintrc.json
+jest.config.js
+.github/
+.git/
+.gitignore
+
+# Build artifacts
+*.log
+npm-debug.log*
+.nyc_output/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Misc
+TODO.md
+.DS_Store
