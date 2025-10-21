@@ -8,7 +8,7 @@ This document summarizes the deliverables for the Node-RED node design specifica
 **File**: [docs/NODE_DESIGN.md](./NODE_DESIGN.md)
 
 A comprehensive 1,300+ line design specification including:
-- **Node Structure**: Multiple specialized nodes (goodwe-read, goodwe-write, goodwe-discover, goodwe-info, goodwe-config) with shared helper library
+- **Node Structure**: Multiple specialized nodes (read, write, discover, info, config) with shared helper library
 - **Architecture Diagrams**: Component layout, state machine, data flow
 - **Configuration UI**: Complete field specifications with validation rules
 - **Message Structure**: Input/output formats for all operations
@@ -20,16 +20,16 @@ A comprehensive 1,300+ line design specification including:
 **Location**: NODE_DESIGN.md Section 2
 
 Complete UI specification with:
-- **goodwe-config node**: 5 basic + 4 advanced configuration fields
-- **goodwe-read node**: Config reference, output format, polling
-- **goodwe-write node**: Config reference, confirmation option
-- **goodwe-discover node**: Standalone discovery settings
-- **goodwe-info node**: Config reference
+- **config node**: 5 basic + 4 advanced configuration fields
+- **read node**: Config reference, output format, polling
+- **write node**: Config reference, confirmation option
+- **discover node**: Standalone discovery settings
+- **info node**: Config reference
 - **Field Validation Rules**: Regex patterns, ranges, requirements
 - **UI Mockups**: ASCII diagrams showing layout for each node type
 - **Dynamic Behavior**: Protocol changes auto-update port
 
-Configuration for goodwe-config node:
+Configuration for config node:
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | Name | text | "" | Node display name |
@@ -51,25 +51,25 @@ Complete message structure for:
 
 Each specialized node has a simpler, purpose-specific input format:
 
-**goodwe-read**:
+**read**:
 - Simple trigger: `msg.payload = true`
 - Sensor filter: `msg.payload = { sensor_id: "vpv1" }`
 - Multiple sensors: `msg.payload = { sensors: ["vpv1", "battery_soc"] }`
 
-**goodwe-write**:
+**write**:
 - Write setting: `msg.payload = { setting_id: "grid_export_limit", value: 5000 }`
 
-**goodwe-discover**:
+**discover**:
 - Any message triggers discovery: `msg.payload = true`
 
-**goodwe-info**:
+**info**:
 - Any message triggers info read: `msg.payload = true`
 
 #### Output Messages
 
 All nodes use consistent output structure:
 
-**goodwe-read**:
+**read**:
 ```javascript
 {
     payload: {
@@ -83,7 +83,7 @@ All nodes use consistent output structure:
 }
 ```
 
-**goodwe-write**:
+**write**:
 ```javascript
 {
     payload: {
@@ -96,7 +96,7 @@ All nodes use consistent output structure:
 }
 ```
 
-**goodwe-discover**:
+**discover**:
 ```javascript
 {
     payload: {
@@ -109,7 +109,7 @@ All nodes use consistent output structure:
 }
 ```
 
-**goodwe-info**:
+**info**:
 ```javascript
 {
     payload: {
@@ -144,10 +144,10 @@ Documented major design decisions:
 2. **Shared Config Node vs Inline Config** → Config node (eliminates duplication, follows best practices)
 3. **Helper Library for Code Sharing** → lib/goodwe-helper.js (single source of truth, eliminates code duplication)
 4. **Output Formats** → Multiple formats (user choice: flat/categorized/array)
-5. **Auto-polling** → Support in goodwe-read only (appropriate for monitoring use case)
+5. **Auto-polling** → Support in read only (appropriate for monitoring use case)
 6. **Error Strategy** → Comprehensive with retry tracking (actionable messages)
 7. **Protocol Implementation** → From scratch in helper library (no external dependencies)
-8. **Write Safety** → Optional confirmation in goodwe-write node (configurable)
+8. **Write Safety** → Optional confirmation in write node (configurable)
 
 Each decision includes:
 - ✅ Rationale with pros
@@ -165,13 +165,13 @@ Each decision includes:
 
 Test coverage:
 - **Configuration validation**: Tests for all node types
-  - goodwe-config: IP addresses, hostnames, ports, protocols, families
+  - config: IP addresses, hostnames, ports, protocols, families
   - Operational nodes: Config references, node-specific settings
 - **Message format**: Tests for each specialized node
-  - goodwe-read: Input triggers, output formats, sensor filters
-  - goodwe-write: Setting writes, confirmation
-  - goodwe-discover: Discovery output
-  - goodwe-info: Device information output
+  - read: Input triggers, output formats, sensor filters
+  - write: Setting writes, confirmation
+  - discover: Discovery output
+  - info: Device information output
 - **Helper library**: Protocol handlers, data parsing, error handling
 - **Status reporting**: Status transitions for all node types
 - **Integration tests**: End-to-end scenarios with multiple nodes
@@ -181,14 +181,14 @@ Test coverage:
 
 Design questions (RESOLVED):
 - ✅ **Node structure**: Specialized nodes (decision made based on user feedback)
-- ✅ **Config node**: Implemented as goodwe-config
+- ✅ **Config node**: Implemented as config
 - ✅ **Helper library**: lib/goodwe-helper.js created
-- ✅ **Discovery node**: Implemented as goodwe-discover
+- ✅ **Discovery node**: Implemented as discover
 
 Implementation questions (open):
-- Auto-discovery: Implemented in goodwe-discover node
+- Auto-discovery: Implemented in discover node
 - Sensor data caching: No (real-time only)
-- Write confirmation: Optional in goodwe-write config
+- Write confirmation: Optional in write config
 - Protocol priority: UDP first
 - Family priority: ET first
 - TypeScript usage (No - keep simple)
@@ -211,7 +211,7 @@ Implementation questions (open):
 
 ## 🎯 Success Criteria Met
 
-✅ **Define Node Structure**: Multiple specialized nodes (goodwe-config, goodwe-read, goodwe-write, goodwe-discover, goodwe-info) with shared helper library  
+✅ **Define Node Structure**: Multiple specialized nodes (config, read, write, discover, info) with shared helper library  
 ✅ **Configuration UI**: Complete field specifications for all node types with validation rules  
 ✅ **Message Structure**: Purpose-specific input/output formats for each node type fully documented  
 ✅ **Error/Status Reporting**: 9 status states, 8 error types, visual indicators for all nodes  

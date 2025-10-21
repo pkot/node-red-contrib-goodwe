@@ -657,9 +657,9 @@ msg.topic = "goodwe/error"
 **Primary Node**: `goodwe` (combined read/write node)
 
 **Potential Future Nodes**:
-- `goodwe-discover`: Discovery-only node
+- `discover`: Discovery-only node
 - `goodwe-sensor`: Single sensor monitor
-- `goodwe-config`: Configuration node (shared connection)
+- `config`: Configuration node (shared connection)
 
 ---
 

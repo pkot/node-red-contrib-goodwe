@@ -24,12 +24,14 @@ This document specifies the design for the Node-RED node(s) that provide integra
 
 ### Key Decisions
 
-- **Node Structure**: Multiple specialized nodes (`goodwe-read`, `goodwe-write`, `goodwe-discover`, `goodwe-config`) with shared helper library
-- **Configuration**: Shared configuration node (`goodwe-config`) for connection settings
+- **Node Structure**: Multiple specialized nodes (`read`, `write`, `discover`, `config`) with shared helper library
+- **Configuration**: Shared configuration node (`config`) for connection settings
 - **Operation**: Purpose-built nodes for specific operations with simplified interfaces
 - **Status**: Visual feedback using Node-RED status API
 - **Error Handling**: Comprehensive error messages with retry tracking
 - **Code Sharing**: Common protocol and communication functions in helper library
+
+**Note**: Node names don't include "goodwe-" prefix as they appear in the GoodWe palette category, making the prefix redundant.
 
 ---
 
@@ -39,7 +41,7 @@ This document specifies the design for the Node-RED node(s) that provide integra
 
 After analyzing the requirements and Node-RED best practices, we will implement **multiple specialized nodes** with a shared helper library:
 
-#### Configuration Node: `goodwe-config`
+#### Configuration Node: `config`
 
 **Purpose**: Shared configuration for connection settings
 - Stores inverter connection details (host, port, protocol, family)
@@ -54,25 +56,27 @@ After analyzing the requirements and Node-RED best practices, we will implement 
 
 #### Operational Nodes:
 
-1. **`goodwe-read`** - Read runtime sensor data
+1. **`read`** - Read runtime sensor data
    - Input: Trigger message (optional sensor filter)
    - Output: Runtime sensor data
    - Purpose: Primary data acquisition node
 
-2. **`goodwe-write`** - Write configuration settings
+2. **`write`** - Write configuration settings
    - Input: Setting ID and value
    - Output: Write confirmation
    - Purpose: Configuration management (use with caution)
 
-3. **`goodwe-discover`** - Discover inverters on network
+3. **`discover`** - Discover inverters on network
    - Input: Trigger message
    - Output: List of discovered inverters
    - Purpose: Network discovery and auto-configuration
 
-4. **`goodwe-info`** - Get device information
+4. **`info`** - Get device information
    - Input: Trigger message
    - Output: Device model, serial, firmware info
    - Purpose: Device identification and diagnostics
+
+**Note**: Nodes appear in the **GoodWe** palette category, so the "goodwe-" prefix is omitted from node names to avoid redundancy.
 
 **Rationale for Multiple Nodes**:
 - ✅ **Clearer purpose** - Each node has a single, well-defined responsibility
@@ -113,7 +117,7 @@ Contains:
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
-│  │ goodwe-read  │  │ goodwe-write │  │goodwe-discover│    │
+│  │     read     │  │    write     │  │   discover   │    │
 │  │              │  │              │  │              │    │
 │  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘    │
 │         │                 │                 │            │
@@ -121,7 +125,7 @@ Contains:
 │                           │                              │
 │                           ▼                              │
 │              ┌─────────────────────────┐                 │
-│              │   goodwe-config node    │                 │
+│              │     config node         │                 │
 │              │  (Shared Configuration) │                 │
 │              │  - Host, Port, Protocol │                 │
 │              │  - Family, Timeout      │                 │
@@ -147,15 +151,18 @@ Contains:
 
 ### 1.3 Node Details
 
-#### goodwe-config (Configuration Node)
+#### config (Configuration Node)
 
-**Properties**:
-- Host (IP address or hostname)
-- Port (8899 for UDP, 502 for Modbus)
-- Protocol (UDP or Modbus TCP)
-- Family (ET, ES, DT series)
-- Timeout (milliseconds)
-- Retries (number of attempts)
+**Properties** (with defaults):
+- **Name** - Configuration identifier - *Default: ""*
+- **Host** - IP address or hostname - *Required, no default*
+- **Port** - Communication port - *Default: 8899*
+- **Protocol** - UDP or Modbus TCP - *Default: "udp"*
+- **Family** - Inverter series (ET, ES, DT) - *Default: "ET"*
+- **Timeout** - Response timeout in milliseconds - *Default: 1000*
+- **Retries** - Number of retry attempts - *Default: 3*
+- **Comm Address** - Communication address - *Default: "auto"*
+- **Keep Alive** - Keep connection alive - *Default: true*
 
 **Responsibilities**:
 - Store connection configuration
@@ -163,15 +170,21 @@ Contains:
 - Provide connection to operational nodes
 - Track connection status
 
-#### goodwe-read (Data Read Node)
+#### read (Data Read Node)
 
 **Inputs**: 1 (trigger or filter)
 **Outputs**: 1 (sensor data)
 
+**Properties** (with defaults):
+- **Name** - Node display name - *Default: ""*
+- **Config** - Reference to config node - *Required, no default*
+- **Output Format** - Data format - *Default: "flat"* (options: flat, categorized, array)
+- **Polling** - Auto-polling interval in seconds - *Default: 0* (0 = disabled)
+
 **Input Options**:
 ```javascript
 // Trigger read all sensors
-msg.payload = "read"
+msg.payload = true
 
 // Read specific sensor
 msg.payload = { sensor_id: "vpv1" }
@@ -191,14 +204,20 @@ msg.payload = { sensors: ["vpv1", "vpv2", "battery_soc"] }
         // ... more sensors
     },
     topic: "goodwe/runtime_data",
+    _timestamp: "2025-10-20T21:37:42.452Z",
     _inverter: { model: "...", serial: "...", family: "..." }
 }
 ```
 
-#### goodwe-write (Configuration Write Node)
+#### write (Configuration Write Node)
 
 **Inputs**: 1 (setting and value)
 **Outputs**: 1 (confirmation)
+
+**Properties** (with defaults):
+- **Name** - Node display name - *Default: ""*
+- **Config** - Reference to config node - *Required, no default*
+- **Confirm** - Require confirmation before write - *Default: false*
 
 **Input Format**:
 ```javascript
@@ -221,10 +240,14 @@ msg.payload = {
 }
 ```
 
-#### goodwe-discover (Discovery Node)
+#### discover (Discovery Node)
 
 **Inputs**: 1 (trigger)
 **Outputs**: 1 (discovered devices)
+
+**Properties** (with defaults):
+- **Name** - Node display name - *Default: ""*
+- **Timeout** - Discovery timeout in milliseconds - *Default: 5000*
 
 **Input**: Any message triggers discovery
 
@@ -246,10 +269,14 @@ msg.payload = {
 }
 ```
 
-#### goodwe-info (Device Info Node)
+#### info (Device Info Node)
 
 **Inputs**: 1 (trigger)
 **Outputs**: 1 (device information)
+
+**Properties** (with defaults):
+- **Name** - Node display name - *Default: ""*
+- **Config** - Reference to config node - *Required, no default*
 
 **Output Format**:
 ```javascript
@@ -270,7 +297,7 @@ msg.payload = {
 
 ## 2. Configuration UI Design
 
-### 2.1 goodwe-config Node Properties
+### 2.1 config Node Properties
 
 The configuration node stores shared connection settings used by all operational nodes.
 
@@ -297,36 +324,36 @@ The configuration node stores shared connection settings used by all operational
 
 Each operational node has minimal configuration since connection settings are in the config node.
 
-#### goodwe-read Node
+#### read Node
 
 | Field | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
 | **Name** | text | No | `""` | Node display name |
-| **Config** | config | Yes | - | Reference to goodwe-config node |
+| **Config** | config | Yes | - | Reference to config node |
 | **Output Format** | select | No | `flat` | Output data format: `flat`, `categorized`, `array` |
 | **Polling** | number | No | `0` | Auto-polling interval in seconds (0 = disabled) |
 
-#### goodwe-write Node
+#### write Node
 
 | Field | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
 | **Name** | text | No | `""` | Node display name |
-| **Config** | config | Yes | - | Reference to goodwe-config node |
+| **Config** | config | Yes | - | Reference to config node |
 | **Confirm** | boolean | No | `false` | Require confirmation before write |
 
-#### goodwe-discover Node
+#### discover Node
 
 | Field | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
 | **Name** | text | No | `""` | Node display name |
 | **Timeout** | number | No | `5000` | Discovery timeout in milliseconds |
 
-#### goodwe-info Node
+#### info Node
 
 | Field | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
 | **Name** | text | No | `""` | Node display name |
-| **Config** | config | Yes | - | Reference to goodwe-config node |
+| **Config** | config | Yes | - | Reference to config node |
 
 ### 2.2 UI Field Specifications
 
@@ -382,11 +409,11 @@ Each operational node has minimal configuration since connection settings are in
 }
 ```
 
-### 2.3 UI Mockup - goodwe-config Node
+### 2.3 UI Mockup - config Node
 
 ```
 ┌───────────────────────────────────────────────┐
-│ Edit goodwe-config node                   [X] │
+│ Edit config node                   [X] │
 ├───────────────────────────────────────────────┤
 │                                               │
 │  Name         [My GoodWe Inverter_______]    │
@@ -417,11 +444,11 @@ When Advanced Settings expanded:
 │  Keep Alive   [✓] Keep connection alive      │
 ```
 
-### 2.4 UI Mockup - goodwe-read Node
+### 2.4 UI Mockup - read Node
 
 ```
 ┌───────────────────────────────────────────────┐
-│ Edit goodwe-read node                     [X] │
+│ Edit read node                     [X] │
 ├───────────────────────────────────────────────┤
 │                                               │
 │  Name         [Read Inverter Data_______]    │
@@ -439,11 +466,11 @@ When Advanced Settings expanded:
 └───────────────────────────────────────────────┘
 ```
 
-### 2.5 UI Mockup - goodwe-write Node
+### 2.5 UI Mockup - write Node
 
 ```
 ┌───────────────────────────────────────────────┐
-│ Edit goodwe-write node                    [X] │
+│ Edit write node                    [X] │
 ├───────────────────────────────────────────────┤
 │                                               │
 │  Name         [Write Settings___________]    │
@@ -462,24 +489,24 @@ When Advanced Settings expanded:
 
 ### 2.6 Validation Rules
 
-**goodwe-config Node:**
+**config Node:**
 1. **Host**: Must be valid IP address or hostname (regex validated)
 2. **Port**: Must be 1-65535 (number validation)
 3. **Timeout**: Must be >= 100ms
 4. **Retries**: Must be >= 0
 
-**goodwe-read Node:**
-1. **Config**: Must reference a valid goodwe-config node
+**read Node:**
+1. **Config**: Must reference a valid config node
 2. **Polling Interval**: Must be >= 0 (0 means disabled)
 
-**goodwe-write Node:**
-1. **Config**: Must reference a valid goodwe-config node
+**write Node:**
+1. **Config**: Must reference a valid config node
 
-**goodwe-discover Node:**
+**discover Node:**
 1. **Timeout**: Must be >= 1000ms (discovery needs time)
 
-**goodwe-info Node:**
-1. **Config**: Must reference a valid goodwe-config node
+**info Node:**
+1. **Config**: Must reference a valid config node
 
 ---
 
@@ -487,7 +514,7 @@ When Advanced Settings expanded:
 
 Since we have specialized nodes, each node has its own simpler message structure without commands.
 
-### 3.1 goodwe-read Node Messages
+### 3.1 read Node Messages
 
 #### 3.1.1 Input Messages
 
@@ -609,7 +636,7 @@ msg.payload = { sensors: ["vpv1", "vpv2", "battery_soc"] }
 }
 ```
 
-### 3.2 goodwe-write Node Messages
+### 3.2 write Node Messages
 
 #### 3.2.1 Input Messages
 
@@ -667,7 +694,7 @@ msg.payload = {
 }
 ```
 
-### 3.3 goodwe-discover Node Messages
+### 3.3 discover Node Messages
 
 #### 3.3.1 Input Messages
 
@@ -721,7 +748,7 @@ msg.payload = {}
 }
 ```
 
-### 3.4 goodwe-info Node Messages
+### 3.4 info Node Messages
 
 #### 3.4.1 Input Messages
 
@@ -975,10 +1002,10 @@ All nodes use a consistent error message format:
 ### 3.6 Message Topic Convention
 
 All operational nodes use consistent topic patterns:
-- **goodwe-read**: `goodwe/runtime_data`
-- **goodwe-write**: `goodwe/write_confirm` or `goodwe/error`
-- **goodwe-discover**: `goodwe/discover`
-- **goodwe-info**: `goodwe/device_info`
+- **read**: `goodwe/runtime_data`
+- **write**: `goodwe/write_confirm` or `goodwe/error`
+- **discover**: `goodwe/discover`
+- **info**: `goodwe/device_info`
 
 Topics can be overridden by setting `msg.topic` in the input message.
 
@@ -1164,7 +1191,7 @@ When Node-RED debug logging is enabled, the node outputs:
 
 ### 5.2 Shared Config Node vs Inline Configuration
 
-**Decision**: Shared `goodwe-config` configuration node
+**Decision**: Shared `config` configuration node
 
 **Rationale**:
 - ✅ Eliminates configuration duplication
@@ -1202,7 +1229,7 @@ When Node-RED debug logging is enabled, the node outputs:
 
 ### 5.4 Output Format Options
 
-**Decision**: Support multiple output formats (flat, categorized, array) in goodwe-read node
+**Decision**: Support multiple output formats (flat, categorized, array) in read node
 
 **Rationale**:
 - ✅ Different users prefer different formats
@@ -1211,13 +1238,13 @@ When Node-RED debug logging is enabled, the node outputs:
 - ✅ Array preserves metadata
 
 **Tradeoff**:
-- ❌ Adds complexity to goodwe-read node
+- ❌ Adds complexity to read node
 - ✅ Configuration option makes it user choice
 - ✅ Helper library can provide formatter functions
 
-### 5.5 Auto-Polling in goodwe-read Node
+### 5.5 Auto-Polling in read Node
 
-**Decision**: Support optional auto-polling in goodwe-read only
+**Decision**: Support optional auto-polling in read only
 
 **Rationale**:
 - ✅ Auto-polling convenient for monitoring
@@ -1279,7 +1306,7 @@ When Node-RED debug logging is enabled, the node outputs:
 **File**: `test/config-node.test.js`
 
 ```javascript
-describe("goodwe-config node configuration", () => {
+describe("config node configuration", () => {
     test("should load with default configuration", () => {
         // Verify default values: port=8899, protocol=udp, family=ET
     });
@@ -1310,23 +1337,23 @@ describe("goodwe-config node configuration", () => {
 });
 
 describe("operational node configuration", () => {
-    test("goodwe-read should require config reference", () => {
+    test("read should require config reference", () => {
         // Verify config node is required
     });
     
-    test("goodwe-write should require config reference", () => {
+    test("write should require config reference", () => {
         // Verify config node is required
     });
     
-    test("goodwe-info should require config reference", () => {
+    test("info should require config reference", () => {
         // Verify config node is required
     });
     
-    test("goodwe-discover should work without config", () => {
+    test("discover should work without config", () => {
         // Discovery node is independent
     });
     
-    test("goodwe-read should accept output format option", () => {
+    test("read should accept output format option", () => {
         // flat, categorized, array
     });
 });
@@ -1334,10 +1361,10 @@ describe("operational node configuration", () => {
 
 #### 6.1.2 Node-Specific Message Tests
 
-**File**: `test/goodwe-read.test.js`
+**File**: `test/read.test.js`
 
 ```javascript
-describe("goodwe-read input messages", () => {
+describe("read input messages", () => {
     test("should accept simple trigger", () => {
         // msg.payload = true
     });
@@ -1351,7 +1378,7 @@ describe("goodwe-read input messages", () => {
     });
 });
 
-describe("goodwe-read output messages", () => {
+describe("read output messages", () => {
     test("should output flat format by default", () => {
         // Verify structure matches spec
     });
@@ -1382,10 +1409,10 @@ describe("goodwe-read output messages", () => {
 });
 ```
 
-**File**: `test/goodwe-write.test.js`
+**File**: `test/write.test.js`
 
 ```javascript
-describe("goodwe-write input messages", () => {
+describe("write input messages", () => {
     test("should accept setting write", () => {
         // msg.payload = { setting_id: "...", value: ... }
     });
@@ -1403,7 +1430,7 @@ describe("goodwe-write input messages", () => {
     });
 });
 
-describe("goodwe-write output messages", () => {
+describe("write output messages", () => {
     test("should include success flag", () => {
         // success: true/false
     });
@@ -1418,10 +1445,10 @@ describe("goodwe-write output messages", () => {
 });
 ```
 
-**File**: `test/goodwe-discover.test.js`
+**File**: `test/discover.test.js`
 
 ```javascript
-describe("goodwe-discover operation", () => {
+describe("discover operation", () => {
     test("should trigger on any message", () => {
         // Any payload triggers discovery
     });
@@ -1444,10 +1471,10 @@ describe("goodwe-discover operation", () => {
 });
 ```
 
-**File**: `test/goodwe-info.test.js`
+**File**: `test/info.test.js`
 
 ```javascript
-describe("goodwe-info operation", () => {
+describe("info operation", () => {
     test("should trigger on any message", () => {
         // Any payload triggers info read
     });
@@ -1522,13 +1549,13 @@ describe("error handling", () => {
 
 ```javascript
 describe("node status updates", () => {
-    test("goodwe-read should show status transitions", () => {});
+    test("read should show status transitions", () => {});
     
-    test("goodwe-write should show status transitions", () => {});
+    test("write should show status transitions", () => {});
     
-    test("goodwe-discover should show discovery progress", () => {});
+    test("discover should show discovery progress", () => {});
     
-    test("goodwe-info should show info retrieval", () => {});
+    test("info should show info retrieval", () => {});
     
     test("should show 'connecting...' when connecting", () => {});
     
@@ -1558,11 +1585,11 @@ describe("end-to-end scenarios", () => {
     
     test("should discover and then connect to inverter", () => {});
     
-    test("should read data using goodwe-read node", () => {});
+    test("should read data using read node", () => {});
     
-    test("should write setting using goodwe-write node", () => {});
+    test("should write setting using write node", () => {});
     
-    test("should get device info using goodwe-info node", () => {});
+    test("should get device info using info node", () => {});
     
     test("should handle connection failure gracefully", () => {});
     
@@ -1647,7 +1674,7 @@ Tests run on every commit:
 
 | Question | Options | Recommendation | Priority |
 |----------|---------|----------------|----------|
-| Should we implement auto-discovery of inverters on network? | Yes / No / Later | **Yes** (goodwe-discover node) | High |
+| Should we implement auto-discovery of inverters on network? | Yes / No / Later | **Yes** (discover node) | High |
 | Should we cache sensor data? | Yes / No | **No** (real-time only) | Low |
 | Should write operations require explicit confirmation? | Yes / No | **Optional** (config option) | Medium |
 | Which protocol to implement first? | UDP / Modbus / Both | **UDP** (more common) | High |
@@ -1661,7 +1688,7 @@ Tests run on every commit:
 3. **Alerts**: Configurable alerts based on sensor thresholds
 4. **Multi-Inverter Aggregation**: Node to aggregate data from multiple inverters
 5. **Configuration Backup**: Ability to backup/restore inverter settings
-6. **Settings Read Node**: Dedicated node for reading inverter settings (vs goodwe-read for sensors)
+6. **Settings Read Node**: Dedicated node for reading inverter settings (vs read for sensors)
 
 ---
 
@@ -1671,14 +1698,14 @@ Tests run on every commit:
 
 ```
 ┌──────────┐        ┌────────────────┐        ┌──────────┐
-│  Inject  │──msg──▶│ goodwe-read    │──msg──▶│  Debug   │
+│  Inject  │──msg──▶│ read    │──msg──▶│  Debug   │
 │   Node   │        │     Node       │        │   Node   │
 └──────────┘        └───────┬────────┘        └──────────┘
                             │
                             │ uses config
                             ▼
                     ┌───────────────┐
-                    │ goodwe-config │
+                    │ config │
                     │     Node      │
                     └───────┬───────┘
                             │
@@ -1698,19 +1725,19 @@ Tests run on every commit:
 Multiple nodes sharing config:
 
 ┌──────────┐     ┌────────────────┐
-│  Inject  │────▶│ goodwe-read    │────▶ [output]
+│  Inject  │────▶│ read    │────▶ [output]
 └──────────┘     └────────┬───────┘
                           │
                           │ shares
                           ▼
                   ┌───────────────┐
-                  │ goodwe-config │
+                  │ config │
                   │     Node      │
                   └───────┬───────┘
                           ▲
                           │ shares
 ┌──────────┐     ┌────────┴───────┐
-│  Inject  │────▶│ goodwe-info    │────▶ [output]
+│  Inject  │────▶│ info    │────▶ [output]
 └──────────┘     └────────────────┘
 ```
 
@@ -1743,7 +1770,7 @@ Multiple nodes sharing config:
     [Error] ────────────▶ [Disconnected]
 ```
 
-### 8.3 Data Flow (goodwe-read example)
+### 8.3 Data Flow (read example)
 
 ```
 Input Msg                                    Output Msg
@@ -1754,14 +1781,14 @@ Input Msg                                    Output Msg
         │                                      │
         ▼                                      │
    ┌─────────────────┐                        │
-   │  goodwe-read    │                        │
+   │  read    │                        │
    │     Node        │                        │
    └────────┬────────┘                        │
             │                                  │
             │ get config                       │
             ▼                                  │
    ┌─────────────────┐                        │
-   │ goodwe-config   │                        │
+   │ config   │                        │
    └────────┬────────┘                        │
             │                                  │
             │ call helper                      │
@@ -1810,12 +1837,12 @@ Input Msg                                    Output Msg
 
 #### Phase 1: Helper Library and Config Node
 1. Create `lib/goodwe-helper.js` with protocol stubs
-2. Implement `goodwe-config` configuration node
+2. Implement `config` configuration node
 3. Add connection management in helper
 4. Create tests for config node
 
-#### Phase 2: goodwe-read Node
-1. Implement `goodwe-read` node
+#### Phase 2: read Node
+1. Implement `read` node
 2. Add output formatting options (flat/categorized/array)
 3. Implement polling functionality
 4. Create tests for read node
@@ -1828,9 +1855,9 @@ Input Msg                                    Output Msg
 5. Data parsing and conversion
 
 #### Phase 4: Additional Operational Nodes
-1. Implement `goodwe-discover` node
-2. Implement `goodwe-info` node
-3. Implement `goodwe-write` node (with safety warnings)
+1. Implement `discover` node
+2. Implement `info` node
+3. Implement `write` node (with safety warnings)
 4. Create tests for all nodes
 
 #### Phase 5: Error Handling and Polish
@@ -1854,32 +1881,32 @@ Input Msg                                    Output Msg
 
 ```
 nodes/
-├── goodwe-config.js         # Configuration node
-├── goodwe-config.html       # Config node UI
-├── goodwe-read.js           # Read runtime data node
-├── goodwe-read.html         # Read node UI
-├── goodwe-write.js          # Write settings node
-├── goodwe-write.html        # Write node UI
-├── goodwe-discover.js       # Discovery node
-├── goodwe-discover.html     # Discovery node UI
-├── goodwe-info.js           # Device info node
-├── goodwe-info.html         # Info node UI
+├── config.js         # Configuration node
+├── config.html       # Config node UI
+├── read.js           # Read runtime data node
+├── read.html         # Read node UI
+├── write.js          # Write settings node
+├── write.html        # Write node UI
+├── discover.js       # Discovery node
+├── discover.html     # Discovery node UI
+├── info.js           # Device info node
+├── info.html         # Info node UI
 └── icons/                   # Node icons
-    ├── goodwe-config.svg
-    ├── goodwe-read.svg
-    ├── goodwe-write.svg
-    ├── goodwe-discover.svg
-    └── goodwe-info.svg
+    ├── config.svg
+    ├── read.svg
+    ├── write.svg
+    ├── discover.svg
+    └── info.svg
 
 lib/
 └── goodwe-helper.js         # Shared protocol and utility functions
 
 test/
 ├── config-node.test.js      # Config node tests
-├── goodwe-read.test.js      # Read node tests
-├── goodwe-write.test.js     # Write node tests
-├── goodwe-discover.test.js  # Discovery node tests
-├── goodwe-info.test.js      # Info node tests
+├── read.test.js      # Read node tests
+├── write.test.js     # Write node tests
+├── discover.test.js  # Discovery node tests
+├── info.test.js      # Info node tests
 ├── goodwe-helper.test.js    # Helper library tests
 ├── status-reporting.test.js # Status indicator tests
 └── integration.test.js      # End-to-end tests
@@ -1904,7 +1931,7 @@ test/
 [
     {
         "id": "config1",
-        "type": "goodwe-config",
+        "type": "config",
         "name": "My GoodWe Inverter",
         "host": "192.168.1.100",
         "port": 8899,
@@ -1921,7 +1948,7 @@ test/
     },
     {
         "id": "read1",
-        "type": "goodwe-read",
+        "type": "read",
         "name": "Read Inverter Data",
         "config": "config1",
         "wires": [["debug1"]]
@@ -1948,7 +1975,7 @@ test/
     },
     {
         "id": "discover1",
-        "type": "goodwe-discover",
+        "type": "discover",
         "name": "Find Inverters",
         "wires": [["function1"]]
     },
@@ -1973,7 +2000,7 @@ test/
 [
     {
         "id": "config1",
-        "type": "goodwe-config",
+        "type": "config",
         "name": "My Inverter",
         "host": "192.168.1.100",
         "port": 8899,
@@ -1988,7 +2015,7 @@ test/
     },
     {
         "id": "read1",
-        "type": "goodwe-read",
+        "type": "read",
         "config": "config1",
         "wires": [["extract-power", "extract-soc"]]
     },
@@ -2029,7 +2056,7 @@ test/
 [
     {
         "id": "config1",
-        "type": "goodwe-config",
+        "type": "config",
         "name": "My Inverter",
         "host": "192.168.1.100"
     },
@@ -2043,7 +2070,7 @@ test/
     },
     {
         "id": "write1",
-        "type": "goodwe-write",
+        "type": "write",
         "name": "Write Setting",
         "config": "config1",
         "wires": [["debug1"]]
@@ -2056,69 +2083,11 @@ test/
 ]
 ```
 
-### A.2 Dashboard Integration Flow
-
-```json
-[
-    {
-        "id": "goodwe1",
-        "type": "goodwe",
-        "name": "My Inverter",
-        "host": "192.168.1.100",
-        "wires": [["extract-power", "extract-soc"]]
-    },
-    {
-        "id": "extract-power",
-        "type": "function",
-        "func": "msg.payload = msg.payload.data.ppv1 + msg.payload.data.ppv2;\nreturn msg;",
-        "wires": [["gauge-power"]]
-    },
-    {
-        "id": "gauge-power",
-        "type": "ui_gauge",
-        "name": "PV Power",
-        "min": 0,
-        "max": 10000,
-        "unit": "W"
-    }
-]
-```
-
-### A.3 Error Handling Flow
-
-```json
-[
-    {
-        "id": "goodwe1",
-        "type": "goodwe",
-        "wires": [["success-handler"], ["error-handler"]]
-    },
-    {
-        "id": "success-handler",
-        "type": "switch",
-        "property": "payload.success",
-        "rules": [
-            { "t": "true", "v": "true" }
-        ],
-        "wires": [["process-data"]]
-    },
-    {
-        "id": "error-handler",
-        "type": "switch",
-        "property": "payload.success",
-        "rules": [
-            { "t": "false", "v": "false" }
-        ],
-        "wires": [["log-error", "notify-error"]]
-    }
-]
-```
-
 ---
 
 ## Appendix B: Configuration Examples
 
-### B.1 goodwe-config Node - Basic Configuration
+### B.1 config Node - Basic Configuration
 
 ```javascript
 {
@@ -2130,7 +2099,7 @@ test/
 }
 ```
 
-### B.2 goodwe-config Node - Advanced Configuration
+### B.2 config Node - Advanced Configuration
 
 ```javascript
 {
@@ -2146,7 +2115,7 @@ test/
 }
 ```
 
-### B.3 goodwe-config Node - Modbus TCP Configuration
+### B.3 config Node - Modbus TCP Configuration
 
 ```javascript
 {
@@ -2160,23 +2129,23 @@ test/
 }
 ```
 
-### B.4 goodwe-read Node Configuration
+### B.4 read Node Configuration
 
 ```javascript
 {
     name: "Read Inverter Data",
-    config: "config1",  // Reference to goodwe-config node
+    config: "config1",  // Reference to config node
     outputFormat: "flat",  // or "categorized", "array"
     pollingInterval: 10  // Auto-poll every 10 seconds, 0 = disabled
 }
 ```
 
-### B.5 goodwe-write Node Configuration
+### B.5 write Node Configuration
 
 ```javascript
 {
     name: "Write Settings",
-    config: "config1",  // Reference to goodwe-config node
+    config: "config1",  // Reference to config node
     confirm: true  // Require confirmation
 }
 ```
