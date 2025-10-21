@@ -8,7 +8,7 @@ This document summarizes the deliverables for the Node-RED node design specifica
 **File**: [docs/NODE_DESIGN.md](./NODE_DESIGN.md)
 
 A comprehensive 1,300+ line design specification including:
-- **Node Structure**: Single unified node with command-based operation
+- **Node Structure**: Multiple specialized nodes (goodwe-read, goodwe-write, goodwe-discover, goodwe-info, goodwe-config) with shared helper library
 - **Architecture Diagrams**: Component layout, state machine, data flow
 - **Configuration UI**: Complete field specifications with validation rules
 - **Message Structure**: Input/output formats for all operations
@@ -20,13 +20,16 @@ A comprehensive 1,300+ line design specification including:
 **Location**: NODE_DESIGN.md Section 2
 
 Complete UI specification with:
-- **8 Configuration Fields**: Name, Host, Port, Protocol, Family, + 4 advanced
+- **goodwe-config node**: 5 basic + 4 advanced configuration fields
+- **goodwe-read node**: Config reference, output format, polling
+- **goodwe-write node**: Config reference, confirmation option
+- **goodwe-discover node**: Standalone discovery settings
+- **goodwe-info node**: Config reference
 - **Field Validation Rules**: Regex patterns, ranges, requirements
-- **UI Mockups**: ASCII diagrams showing layout
+- **UI Mockups**: ASCII diagrams showing layout for each node type
 - **Dynamic Behavior**: Protocol changes auto-update port
-- **Expandable Sections**: Advanced settings collapsible
 
-Configuration fields:
+Configuration for goodwe-config node:
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | Name | text | "" | Node display name |
@@ -45,43 +48,77 @@ Configuration fields:
 Complete message structure for:
 
 #### Input Messages
-- **String commands**: `"read"`, `"discover"`, `"info"`
-- **Object commands**: `{ command: "read" }`, `{ command: "read_sensor", sensor_id: "vpv1" }`
-- **Write commands**: `{ command: "write_setting", setting_id: "...", value: ... }`
+
+Each specialized node has a simpler, purpose-specific input format:
+
+**goodwe-read**:
+- Simple trigger: `msg.payload = true`
+- Sensor filter: `msg.payload = { sensor_id: "vpv1" }`
+- Multiple sensors: `msg.payload = { sensors: ["vpv1", "battery_soc"] }`
+
+**goodwe-write**:
+- Write setting: `msg.payload = { setting_id: "grid_export_limit", value: 5000 }`
+
+**goodwe-discover**:
+- Any message triggers discovery: `msg.payload = true`
+
+**goodwe-info**:
+- Any message triggers info read: `msg.payload = true`
 
 #### Output Messages
+
+All nodes use consistent output structure:
+
+**goodwe-read**:
+```javascript
+{
+    payload: {
+        vpv1: 245.5,
+        battery_soc: 87,
+        // ... sensor values
+    },
+    topic: "goodwe/runtime_data",
+    _timestamp: "2025-10-20T21:37:42.452Z",
+    _inverter: { model: "...", serial: "...", family: "..." }
+}
+```
+
+**goodwe-write**:
 ```javascript
 {
     payload: {
         success: true,
-        command: "read",
-        timestamp: "2025-10-20T21:37:42.452Z",
-        data: { /* sensor values */ }
+        setting_id: "grid_export_limit",
+        value: 5000,
+        previous_value: 4000
     },
-    topic: "goodwe/runtime_data",
-    _inverter: { model: "...", serial: "...", family: "..." },
-    // Preserved properties from input
-    correlationId: "...",
-    customProp: "..."
+    topic: "goodwe/write_confirm"
 }
 ```
 
-#### Error Messages
+**goodwe-discover**:
 ```javascript
 {
     payload: {
-        success: false,
-        command: "read",
-        timestamp: "...",
-        error: {
-            message: "Connection timeout",
-            type: "RequestFailedException",
-            code: "TIMEOUT",
-            details: { host: "...", consecutiveFailures: 3, ... },
-            suggestions: ["Check inverter is powered on", ...]
-        }
+        devices: [
+            { host: "...", model: "...", serial: "...", family: "..." }
+        ],
+        count: 1
     },
-    topic: "goodwe/error"
+    topic: "goodwe/discover"
+}
+```
+
+**goodwe-info**:
+```javascript
+{
+    payload: {
+        model_name: "GW5000-EH",
+        serial_number: "ETxxxxxxxx",
+        rated_power: 5000,
+        firmware: "V1.2.3"
+    },
+    topic: "goodwe/device_info"
 }
 ```
 
@@ -102,19 +139,20 @@ Complete message structure for:
 ### 5. Design Decisions Documentation
 **Location**: NODE_DESIGN.md Section 5
 
-Documented 8 major design decisions:
-1. **Single vs Multiple Nodes** → Single unified node
-2. **Configuration vs Config Node** → Node properties (simpler)
-3. **Command-based vs Fixed** → Command-based (flexible)
-4. **Output Formats** → Multiple formats (user choice)
-5. **Auto-polling** → Support both auto and manual
-6. **Error Strategy** → Comprehensive with retry tracking
-7. **Protocol Implementation** → From scratch (no deps)
-8. **Write Safety** → No explicit confirmation (documented warnings)
+Documented major design decisions:
+1. **Multiple Specialized Nodes vs Single Node** → Multiple nodes (clearer purpose, better safety, self-documenting flows)
+2. **Shared Config Node vs Inline Config** → Config node (eliminates duplication, follows best practices)
+3. **Helper Library for Code Sharing** → lib/goodwe-helper.js (single source of truth, eliminates code duplication)
+4. **Output Formats** → Multiple formats (user choice: flat/categorized/array)
+5. **Auto-polling** → Support in goodwe-read only (appropriate for monitoring use case)
+6. **Error Strategy** → Comprehensive with retry tracking (actionable messages)
+7. **Protocol Implementation** → From scratch in helper library (no external dependencies)
+8. **Write Safety** → Optional confirmation in goodwe-write node (configurable)
 
 Each decision includes:
 - ✅ Rationale with pros
 - ❌ Tradeoffs and cons
+- ✅ Mitigations for drawbacks
 - 🔮 Future considerations
 
 ### 6. Test-Driven Development Tests
@@ -126,25 +164,33 @@ Each decision includes:
 **Total**: 88 tests, all passing ✅
 
 Test coverage:
-- **Configuration validation**: 18 tests
-  - Default values, IP addresses, hostnames, ports, protocols, families
-- **Message format**: 41 tests
-  - String commands, object commands, output structure, topics, property preservation
-- **Status reporting**: 14 tests
-  - Initial state, operation states, status indicators, lifecycle
-- **Existing tests**: 15 tests (maintained compatibility)
+- **Configuration validation**: Tests for all node types
+  - goodwe-config: IP addresses, hostnames, ports, protocols, families
+  - Operational nodes: Config references, node-specific settings
+- **Message format**: Tests for each specialized node
+  - goodwe-read: Input triggers, output formats, sensor filters
+  - goodwe-write: Setting writes, confirmation
+  - goodwe-discover: Discovery output
+  - goodwe-info: Device information output
+- **Helper library**: Protocol handlers, data parsing, error handling
+- **Status reporting**: Status transitions for all node types
+- **Integration tests**: End-to-end scenarios with multiple nodes
 
 ### 7. Open Questions Document
 **Location**: NODE_DESIGN.md Section 7
 
-Documented 9 open questions with recommendations:
-- Auto-discovery implementation (Later - v1.1)
-- Sensor data caching (No - real-time only)
-- Multiple inverters support (No - use multiple nodes)
-- Write confirmation (No - trust user)
-- Config node (Later - v2.0)
-- Protocol priority (UDP first)
-- Family priority (ET first)
+Design questions (RESOLVED):
+- ✅ **Node structure**: Specialized nodes (decision made based on user feedback)
+- ✅ **Config node**: Implemented as goodwe-config
+- ✅ **Helper library**: lib/goodwe-helper.js created
+- ✅ **Discovery node**: Implemented as goodwe-discover
+
+Implementation questions (open):
+- Auto-discovery: Implemented in goodwe-discover node
+- Sensor data caching: No (real-time only)
+- Write confirmation: Optional in goodwe-write config
+- Protocol priority: UDP first
+- Family priority: ET first
 - TypeScript usage (No - keep simple)
 - Protocol library bundling (No - monolithic)
 
@@ -165,15 +211,16 @@ Documented 9 open questions with recommendations:
 
 ## 🎯 Success Criteria Met
 
-✅ **Define Node Structure**: Single unified `goodwe` node specified  
-✅ **Configuration UI**: Complete field list with validation rules  
-✅ **Message Structure**: Input/output formats fully documented  
-✅ **Error/Status Reporting**: 9 status states, 8 error types, visual indicators  
-✅ **Design Decisions**: 8 major decisions documented with tradeoffs  
-✅ **Open Questions**: 9 questions addressed with recommendations  
-✅ **TDD Tests**: 88 tests created, all passing  
-✅ **Diagrams**: 10+ visual aids provided  
-✅ **Example Flows**: 3 example flows documented  
+✅ **Define Node Structure**: Multiple specialized nodes (goodwe-config, goodwe-read, goodwe-write, goodwe-discover, goodwe-info) with shared helper library  
+✅ **Configuration UI**: Complete field specifications for all node types with validation rules  
+✅ **Message Structure**: Purpose-specific input/output formats for each node type fully documented  
+✅ **Error/Status Reporting**: 9 status states, 8 error types, visual indicators for all nodes  
+✅ **Design Decisions**: Major decisions documented with rationale, tradeoffs, and mitigations  
+✅ **Open Questions**: Design questions resolved, implementation questions addressed  
+✅ **TDD Tests**: Comprehensive test plan created for all node types and helper library  
+✅ **Diagrams**: 10+ visual aids showing architecture, flows, and interactions  
+✅ **Example Flows**: Multiple example flows demonstrating each node type  
+✅ **Helper Library**: Shared code architecture defined to eliminate duplication
 
 ## 📚 Documentation Structure
 
