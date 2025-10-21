@@ -42,6 +42,8 @@ This project follows TDD principles. When adding new features:
 
 ### Running Tests
 
+See **[test/README.md](./test/README.md)** for a quick start guide, or **[docs/TESTING.md](./docs/TESTING.md)** for comprehensive testing documentation.
+
 ```bash
 # Run all tests
 npm test
@@ -55,6 +57,12 @@ npm test -- --coverage
 # Run specific test file
 npm test -- test/goodwe.test.js
 ```
+
+**Testing Resources:**
+- 📖 **Quick Start**: [test/README.md](./test/README.md) - Common patterns and utilities
+- 📖 **Full Guide**: [docs/TESTING.md](./docs/TESTING.md) - Comprehensive testing guide
+- 🧪 **Test Utilities**: [test/test-utils.js](./test/test-utils.js) - Helper functions
+- 🎭 **Mock Data**: [test/fixtures/mock-inverter-data.js](./test/fixtures/mock-inverter-data.js) - Sample responses
 
 ### Code Quality
 
