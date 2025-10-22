@@ -72,7 +72,9 @@ describe("goodwe node", function () {
                     expect(msg.payload).toBeDefined();
                     expect(msg.payload.success).toBe(true);
                     expect(msg.payload.data).toBeDefined();
-                    expect(msg.payload.data.status).toBe("not_implemented");
+                    // Data should now contain runtime sensor data
+                    expect(msg.payload.data.vpv1).toBeDefined();
+                    expect(msg.payload.data.pac).toBeDefined();
                     done();
                 } catch(err) {
                     done(err);
