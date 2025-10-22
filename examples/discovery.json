@@ -1,0 +1,161 @@
+[
+    {
+        "id": "discovery-example",
+        "type": "tab",
+        "label": "GoodWe Discovery Example",
+        "disabled": false,
+        "info": "Example flow for discovering GoodWe inverters on the local network"
+    },
+    {
+        "id": "inject-discover",
+        "type": "inject",
+        "z": "discovery-example",
+        "name": "Trigger Discovery",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "discover",
+        "payloadType": "str",
+        "x": 150,
+        "y": 100,
+        "wires": [
+            [
+                "goodwe-node"
+            ]
+        ]
+    },
+    {
+        "id": "goodwe-node",
+        "type": "goodwe",
+        "z": "discovery-example",
+        "name": "Discover Inverters",
+        "host": "",
+        "port": "8899",
+        "protocol": "udp",
+        "family": "ET",
+        "x": 360,
+        "y": 100,
+        "wires": [
+            [
+                "debug-output",
+                "check-success"
+            ]
+        ]
+    },
+    {
+        "id": "debug-output",
+        "type": "debug",
+        "z": "discovery-example",
+        "name": "Discovery Results",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 580,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "check-success",
+        "type": "switch",
+        "z": "discovery-example",
+        "name": "Success?",
+        "property": "payload.success",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "true"
+            },
+            {
+                "t": "false"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 360,
+        "y": 160,
+        "wires": [
+            [
+                "show-inverters"
+            ],
+            [
+                "show-error"
+            ]
+        ]
+    },
+    {
+        "id": "show-inverters",
+        "type": "function",
+        "z": "discovery-example",
+        "name": "Format Inverter List",
+        "func": "const inverters = msg.payload.data.inverters;\nconst count = msg.payload.data.count;\n\nmsg.payload = {\n    summary: `Found ${count} inverter(s)`,\n    inverters: inverters.map(inv => ({\n        ip: inv.ip,\n        model: inv.modelName,\n        serial: inv.serialNumber,\n        family: inv.family\n    }))\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 590,
+        "y": 140,
+        "wires": [
+            [
+                "debug-inverters"
+            ]
+        ]
+    },
+    {
+        "id": "debug-inverters",
+        "type": "debug",
+        "z": "discovery-example",
+        "name": "Found Inverters",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 800,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "show-error",
+        "type": "debug",
+        "z": "discovery-example",
+        "name": "Discovery Error",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload.error",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 570,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "comment",
+        "type": "comment",
+        "z": "discovery-example",
+        "name": "Discovery Example",
+        "info": "This flow demonstrates how to discover GoodWe inverters on your local network.\n\n**To use:**\n1. Click the inject node to trigger discovery\n2. Wait 5 seconds for the discovery to complete\n3. Check the debug output for discovered inverters\n\n**Note:** \n- Discovery uses UDP broadcast on port 8899\n- The timeout is 5 seconds by default\n- If no inverters are found, the result will be an empty array\n- Network firewalls may block discovery broadcasts",
+        "x": 150,
+        "y": 40,
+        "wires": []
+    }
+]

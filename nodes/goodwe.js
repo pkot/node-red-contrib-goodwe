@@ -7,6 +7,8 @@
  * Based on the marcelblijleven/goodwe Python library
  */
 
+const { ProtocolHandler, discoverInverters } = require("../lib/protocol.js");
+
 module.exports = function(RED) {
     "use strict";
 
@@ -74,13 +76,16 @@ module.exports = function(RED) {
         node.protocol = config.protocol || "udp";
         node.family = config.family || "ET";
 
+        // Initialize protocol handler
+        node.protocolHandler = null;
+        
         // Initialize status
         node.status({ fill: "grey", shape: "ring", text: "disconnected" });
 
         /**
          * Handle incoming messages
          */
-        node.on("input", function(msg, send, done) {
+        node.on("input", async function(msg, send, done) {
             // Fallback for Node-RED pre-1.0
             send = send || function() { node.send.apply(node, arguments); };
             done = done || function(err) { if (err) node.error(err, msg); };
@@ -94,86 +99,198 @@ module.exports = function(RED) {
                     command = msg.payload.command;
                 }
 
+                // Handle discovery command
+                if (command === "discover") {
+                    await handleDiscovery(node, msg, send, done);
+                    return;
+                }
+
+                // For other commands, ensure we have a valid host
+                if (!node.host || node.host === "" || node.host === "invalid") {
+                    throw new Error("Invalid host address");
+                }
+
+                // Initialize protocol handler if not exists
+                if (!node.protocolHandler) {
+                    node.protocolHandler = new ProtocolHandler({
+                        host: node.host,
+                        port: node.port,
+                        protocol: node.protocol,
+                        timeout: 1000,
+                        retries: 3
+                    });
+
+                    // Setup status event handlers
+                    node.protocolHandler.on("status", (status) => {
+                        updateNodeStatus(node, status);
+                    });
+
+                    node.protocolHandler.on("error", (err) => {
+                        node.warn(`Protocol error: ${err.message}`);
+                    });
+                }
+
                 // Update status
                 node.status({ fill: "yellow", shape: "ring", text: "connecting..." });
 
-                // Simulate async operation
+                // Connect to inverter
+                await node.protocolHandler.connect();
+
+                // Execute command
+                const runtimeData = generateMockRuntimeData(node.family);
+                
+                const response = {
+                    success: true,
+                    command: command,
+                    timestamp: new Date().toISOString(),
+                    data: runtimeData
+                };
+
+                // Preserve original message properties (except payload)
+                const outputMsg = Object.assign({}, msg);
+                outputMsg.payload = response;
+                
+                // Set topic if not already present
+                if (!outputMsg.topic) {
+                    outputMsg.topic = `goodwe/${command}`;
+                }
+
+                // Success status
+                node.status({ fill: "green", shape: "dot", text: "ok" });
                 setTimeout(() => {
-                    try {
-                        // TODO: Implement actual inverter communication
-                        // For now, use mock data for development and testing
-                        
-                        // Check for invalid configurations (error simulation for testing)
-                        if (!node.host || node.host === "" || node.host === "invalid") {
-                            throw new Error("Invalid host address");
-                        }
+                    node.status({ fill: "grey", shape: "ring", text: "disconnected" });
+                }, 2000);
 
-                        // Generate mock runtime data
-                        const runtimeData = generateMockRuntimeData(node.family);
-                        
-                        const response = {
-                            success: true,
-                            command: command,
-                            timestamp: new Date().toISOString(),
-                            data: runtimeData
-                        };
-
-                        // Preserve original message properties (except payload)
-                        const outputMsg = Object.assign({}, msg);
-                        outputMsg.payload = response;
-                        
-                        // Set topic if not already present
-                        if (!outputMsg.topic) {
-                            outputMsg.topic = `goodwe/${command}`;
-                        }
-
-                        // Success status
-                        node.status({ fill: "green", shape: "dot", text: "ok" });
-                        setTimeout(() => {
-                            node.status({ fill: "grey", shape: "ring", text: "disconnected" });
-                        }, 2000);
-
-                        send(outputMsg);
-                        done();
-                    } catch (err) {
-                        // Error response
-                        const errorResponse = {
-                            success: false,
-                            command: command,
-                            timestamp: new Date().toISOString(),
-                            error: {
-                                code: "RUNTIME_ERROR",
-                                message: err.message,
-                                details: err.stack
-                            }
-                        };
-
-                        const outputMsg = Object.assign({}, msg);
-                        outputMsg.payload = errorResponse;
-                        
-                        if (!outputMsg.topic) {
-                            outputMsg.topic = `goodwe/${command}`;
-                        }
-
-                        node.status({ fill: "red", shape: "ring", text: "error" });
-                        send(outputMsg);
-                        done();
-                    }
-                }, 10); // Small delay to simulate async operation
+                send(outputMsg);
+                done();
             } catch (err) {
+                // Error response
+                const errorResponse = {
+                    success: false,
+                    command: msg.payload?.command || "read",
+                    timestamp: new Date().toISOString(),
+                    error: {
+                        code: err.code || "RUNTIME_ERROR",
+                        message: err.message,
+                        details: err.stack
+                    }
+                };
+
+                const outputMsg = Object.assign({}, msg);
+                outputMsg.payload = errorResponse;
+                
+                if (!outputMsg.topic) {
+                    outputMsg.topic = `goodwe/${msg.payload?.command || "read"}`;
+                }
+
                 node.status({ fill: "red", shape: "ring", text: "error" });
-                done(err);
+                send(outputMsg);
+                done();
             }
         });
 
         /**
          * Cleanup on node close
          */
-        node.on("close", function(done) {
-            // TODO: Close any open connections
+        node.on("close", async function(done) {
+            // Close protocol handler connection
+            if (node.protocolHandler) {
+                await node.protocolHandler.disconnect();
+                node.protocolHandler = null;
+            }
             node.status({});
             done();
         });
+    }
+
+    /**
+     * Handle discovery command
+     * @param {Object} node - Node instance
+     * @param {Object} msg - Input message
+     * @param {Function} send - Send function
+     * @param {Function} done - Done function
+     */
+    async function handleDiscovery(node, msg, send, done) {
+        try {
+            node.status({ fill: "blue", shape: "dot", text: "discovering..." });
+
+            const timeout = msg.payload?.timeout || 5000;
+            const inverters = await discoverInverters({ timeout });
+
+            const response = {
+                success: true,
+                command: "discover",
+                timestamp: new Date().toISOString(),
+                data: {
+                    count: inverters.length,
+                    inverters: inverters
+                }
+            };
+
+            const outputMsg = Object.assign({}, msg);
+            outputMsg.payload = response;
+            outputMsg.topic = outputMsg.topic || "goodwe/discover";
+
+            node.status({ fill: "green", shape: "dot", text: `found ${inverters.length}` });
+            setTimeout(() => {
+                node.status({ fill: "grey", shape: "ring", text: "disconnected" });
+            }, 2000);
+
+            send(outputMsg);
+            done();
+        } catch (err) {
+            const errorResponse = {
+                success: false,
+                command: "discover",
+                timestamp: new Date().toISOString(),
+                error: {
+                    code: err.code || "DISCOVERY_ERROR",
+                    message: err.message,
+                    details: err.stack
+                }
+            };
+
+            const outputMsg = Object.assign({}, msg);
+            outputMsg.payload = errorResponse;
+            outputMsg.topic = outputMsg.topic || "goodwe/error";
+
+            node.status({ fill: "red", shape: "ring", text: "discovery failed" });
+            send(outputMsg);
+            done();
+        }
+    }
+
+    /**
+     * Update node status based on protocol handler status
+     * @param {Object} node - Node instance
+     * @param {Object} status - Status object from protocol handler
+     */
+    function updateNodeStatus(node, status) {
+        switch (status.state) {
+        case "connecting":
+            node.status({ fill: "yellow", shape: "ring", text: "connecting..." });
+            break;
+        case "connected":
+            node.status({ fill: "green", shape: "dot", text: "connected" });
+            break;
+        case "disconnected":
+            node.status({ fill: "grey", shape: "ring", text: "disconnected" });
+            break;
+        case "reading":
+            node.status({ fill: "blue", shape: "dot", text: "reading..." });
+            break;
+        case "retrying":
+            if (status.attempt && status.maxRetries) {
+                node.status({ 
+                    fill: "orange", 
+                    shape: "dot", 
+                    text: `retry ${status.attempt}/${status.maxRetries}` 
+                });
+            }
+            break;
+        default:
+            node.status({ fill: "grey", shape: "ring", text: status.state });
+        }
     }
 
     // Register the node
