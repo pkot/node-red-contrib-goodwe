@@ -7,6 +7,9 @@
  * Data structures are based on the GoodWe Python library and common inverter responses.
  */
 
+// Constants
+const OPERATION_MODES = ["GENERAL", "OFF_GRID", "BACKUP", "ECO", "PEAK_SHAVING"];
+
 module.exports = {
     /**
      * Runtime sensor data - typical successful response
@@ -261,7 +264,7 @@ module.exports = {
                 id: "operation_mode",
                 name: "Operation Mode",
                 unit: "",
-                values: ["GENERAL", "OFF_GRID", "BACKUP", "ECO", "PEAK_SHAVING"],
+                values: OPERATION_MODES,
                 default: "GENERAL",
                 writable: true
             },
@@ -523,5 +526,10 @@ module.exports = {
         DISCHARGE: 1,
         CHARGE: 2,
         STANDBY: 3
-    }
+    },
+
+    /**
+     * Operation modes
+     */
+    operationModes: OPERATION_MODES
 };

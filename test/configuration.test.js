@@ -7,6 +7,7 @@
 
 const helper = require("node-red-node-test-helper");
 const goodweNode = require("../nodes/goodwe.js");
+const mockInverterData = require("./fixtures/mock-inverter-data.js");
 
 helper.init(require.resolve("node-red"));
 
@@ -378,7 +379,7 @@ describe("Configuration Operations", () => {
                         expect(msg.payload.command).toBe("get_operation_mode");
                         expect(msg.payload.data).toBeDefined();
                         expect(msg.payload.data.mode).toBeDefined();
-                        expect(["GENERAL", "OFF_GRID", "BACKUP", "ECO", "PEAK_SHAVING"]).toContain(msg.payload.data.mode);
+                        expect(mockInverterData.operationModes).toContain(msg.payload.data.mode);
                         done();
                     } catch (err) {
                         done(err);

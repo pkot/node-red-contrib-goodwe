@@ -67,7 +67,7 @@ module.exports = function(RED) {
      * Mock configuration state (in-memory)
      * TODO: Replace with actual inverter communication
      */
-    const mockConfigState = JSON.parse(JSON.stringify(mockInverterData.configuration.currentState));
+    const mockConfigState = structuredClone(mockInverterData.configuration.currentState);
 
     /**
      * Validate setting value
@@ -102,7 +102,7 @@ module.exports = function(RED) {
                 };
             }
         } else if (typeof settingDef.min === "number" && typeof settingDef.max === "number") {
-            // Numeric type - check range
+            // Numeric type - check range and type
             const numValue = Number(value);
             if (isNaN(numValue)) {
                 return { 
@@ -114,6 +114,14 @@ module.exports = function(RED) {
                 return { 
                     valid: false, 
                     error: `${settingDef.name} out of range: ${value}. Valid range: ${settingDef.min}-${settingDef.max}${settingDef.unit}` 
+                };
+            }
+        } else {
+            // For other types (boolean, string without enum), just check it's not null/undefined
+            if (value === null || value === undefined) {
+                return {
+                    valid: false,
+                    error: `${settingDef.name} cannot be null or undefined`
                 };
             }
         }
@@ -297,7 +305,7 @@ module.exports = function(RED) {
             switch (command) {
             case "read_settings":
                 // Read all settings
-                response.data = JSON.parse(JSON.stringify(mockConfigState));
+                response.data = structuredClone(mockConfigState);
                 break;
 
             case "read_setting": {
@@ -429,17 +437,25 @@ module.exports = function(RED) {
 
                 const previousMode = mockConfigState.operation_mode;
                 mockConfigState.operation_mode = mode;
-                mockConfigState.eco_mode_power = ecoModePower;
-                mockConfigState.eco_mode_soc = ecoModeSoc;
+                
+                // Only set eco mode parameters if the mode is ECO
+                if (mode === "ECO") {
+                    mockConfigState.eco_mode_power = ecoModePower;
+                    mockConfigState.eco_mode_soc = ecoModeSoc;
+                }
 
                 node.status({ fill: "blue", shape: "dot", text: "setting operation mode..." });
 
                 response.data = {
                     mode: mode,
-                    eco_mode_power: ecoModePower,
-                    eco_mode_soc: ecoModeSoc,
                     previous_mode: previousMode
                 };
+                
+                // Include eco mode parameters in response if mode is ECO
+                if (mode === "ECO") {
+                    response.data.eco_mode_power = ecoModePower;
+                    response.data.eco_mode_soc = ecoModeSoc;
+                }
                 break;
             }
 
