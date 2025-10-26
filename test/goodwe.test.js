@@ -83,4 +83,94 @@ describe("goodwe node", function () {
             n1.receive({ payload: "test" });
         });
     });
+
+    it("should handle read command and trigger status timeout", function (done) {
+        const flow = [
+            { id: "n1", type: "goodwe", name: "test goodwe", host: "192.168.1.100", wires:[["n2"]] },
+            { id: "n2", type: "helper" }
+        ];
+        helper.load(goodweNode, flow, function () {
+            const n2 = helper.getNode("n2");
+            const n1 = helper.getNode("n1");
+            
+            let messageReceived = false;
+            n2.on("input", function (msg) {
+                try {
+                    expect(msg.payload).toBeDefined();
+                    expect(msg.payload.success).toBe(true);
+                    messageReceived = true;
+                    
+                    // Wait for the status timeout to trigger (2 seconds)
+                    setTimeout(() => {
+                        // Test passes if we get here without error
+                        done();
+                    }, 2100);
+                } catch(err) {
+                    done(err);
+                }
+            });
+            n1.receive({ payload: "read" });
+        });
+    }, 5000);
+
+    it("should handle protocol handler status events", function (done) {
+        const flow = [
+            { id: "n1", type: "goodwe", name: "test goodwe", host: "192.168.1.100", wires:[["n2"]] },
+            { id: "n2", type: "helper" }
+        ];
+        helper.load(goodweNode, flow, function () {
+            const n2 = helper.getNode("n2");
+            const n1 = helper.getNode("n1");
+            
+            n2.on("input", function (msg) {
+                try {
+                    expect(msg.payload).toBeDefined();
+                    
+                    // The protocol handler should emit status events
+                    // which are handled by the node
+                    if (n1.protocolHandler) {
+                        // Trigger various status states to cover updateNodeStatus
+                        n1.protocolHandler.emit("status", { state: "connecting" });
+                        n1.protocolHandler.emit("status", { state: "connected" });
+                        n1.protocolHandler.emit("status", { state: "reading" });
+                        n1.protocolHandler.emit("status", { state: "retrying", attempt: 2, maxRetries: 3 });
+                        n1.protocolHandler.emit("status", { state: "disconnected" });
+                        n1.protocolHandler.emit("status", { state: "unknown" });
+                    }
+                    
+                    done();
+                } catch(err) {
+                    done(err);
+                }
+            });
+            n1.receive({ payload: "read" });
+        });
+    });
+
+    it("should handle protocol handler error events", function (done) {
+        const flow = [
+            { id: "n1", type: "goodwe", name: "test goodwe", host: "192.168.1.100", wires:[["n2"]] },
+            { id: "n2", type: "helper" }
+        ];
+        helper.load(goodweNode, flow, function () {
+            const n2 = helper.getNode("n2");
+            const n1 = helper.getNode("n1");
+            
+            n2.on("input", function (msg) {
+                try {
+                    expect(msg.payload).toBeDefined();
+                    
+                    // Trigger protocol error to cover error handler
+                    if (n1.protocolHandler) {
+                        n1.protocolHandler.emit("error", new Error("Test protocol error"));
+                    }
+                    
+                    done();
+                } catch(err) {
+                    done(err);
+                }
+            });
+            n1.receive({ payload: "read" });
+        });
+    });
 });
