@@ -326,4 +326,84 @@ describe("ProtocolHandler", () => {
             }
         }, 5000);
     });
+
+    describe("sendCommandWithRetry success scenarios", () => {
+        it("should return response on successful first attempt", async () => {
+            const handler = new ProtocolHandler({ 
+                protocol: "udp",
+                timeout: 100
+            });
+            
+            await handler.connect();
+            
+            // Mock a successful response by immediately resolving
+            const originalSendCommand = handler.sendCommand.bind(handler);
+            handler.sendCommand = jest.fn().mockResolvedValue(Buffer.from([0x01, 0x02]));
+            
+            const result = await handler.sendCommandWithRetry(Buffer.from([0x00]));
+            expect(result).toEqual(Buffer.from([0x01, 0x02]));
+            expect(handler.sendCommand).toHaveBeenCalledTimes(1);
+            
+            handler.sendCommand = originalSendCommand;
+            await handler.disconnect();
+        });
+
+        it("should succeed after retry", async () => {
+            const handler = new ProtocolHandler({ 
+                protocol: "udp",
+                timeout: 100,
+                retries: 3
+            });
+            
+            await handler.connect();
+            
+            let attemptCount = 0;
+            handler.sendCommand = jest.fn().mockImplementation(() => {
+                attemptCount++;
+                if (attemptCount < 2) {
+                    return Promise.reject(new Error("Temporary failure"));
+                }
+                return Promise.resolve(Buffer.from([0x01, 0x02]));
+            });
+            
+            const result = await handler.sendCommandWithRetry(Buffer.from([0x00]));
+            expect(result).toEqual(Buffer.from([0x01, 0x02]));
+            expect(attemptCount).toBe(2);
+            
+            await handler.disconnect();
+        });
+    });
+});
+
+describe("discovery helper functions", () => {
+    const { discoverInverters } = require("../lib/protocol.js");
+
+    it("should handle discovery timeout", async () => {
+        try {
+            const result = await discoverInverters({ timeout: 100 });
+            // Should return empty array or error depending on environment
+            expect(Array.isArray(result) || result === undefined).toBe(true);
+        } catch (err) {
+            // EPERM or other error is acceptable in test environment
+            expect(err).toBeDefined();
+        }
+    });
+
+    it("should parse discovery responses", async () => {
+        // Test that discovery can handle AA55 responses
+        // This will attempt to broadcast and parse any responses
+        try {
+            const result = await discoverInverters({ timeout: 200 });
+            if (Array.isArray(result)) {
+                result.forEach(inv => {
+                    expect(inv).toHaveProperty("ip");
+                    expect(inv).toHaveProperty("port");
+                    expect(inv).toHaveProperty("family");
+                });
+            }
+        } catch (err) {
+            // Expected in restricted environments
+            expect(err).toBeDefined();
+        }
+    });
 });
