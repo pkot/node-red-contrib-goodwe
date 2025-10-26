@@ -79,7 +79,8 @@ describe("goodwe message format", () => {
                     }
                 });
                 
-                n1.receive({ payload: "discover" });
+                // Use object payload with short timeout to avoid test timeout
+                n1.receive({ payload: { command: "discover", timeout: 500 } });
             });
         });
 
@@ -202,7 +203,8 @@ describe("goodwe message format", () => {
                 n1.receive({ 
                     payload: { 
                         command: "discover",
-                        type: "broadcast"
+                        type: "broadcast",
+                        timeout: 500
                     }
                 });
             });

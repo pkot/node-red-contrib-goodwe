@@ -62,7 +62,8 @@ describe("goodwe discovery", () => {
                     }
                 });
                 
-                n1.receive({ payload: "discover" });
+                // Use short timeout for tests to avoid test timeouts
+                n1.receive({ payload: { command: "discover", timeout: 500 } });
             });
         });
 
@@ -91,7 +92,7 @@ describe("goodwe discovery", () => {
                     }
                 });
                 
-                n1.receive({ payload: { command: "discover" } });
+                n1.receive({ payload: { command: "discover", timeout: 500 } });
             });
         });
 
@@ -121,7 +122,7 @@ describe("goodwe discovery", () => {
                     }
                 });
                 
-                n1.receive({ payload: "discover" });
+                n1.receive({ payload: { command: "discover", timeout: 500 } });
             });
         });
 
@@ -150,7 +151,7 @@ describe("goodwe discovery", () => {
                 });
                 
                 n1.receive({ 
-                    payload: "discover",
+                    payload: { command: "discover", timeout: 500 },
                     customProperty: "preserved"
                 });
             });
@@ -184,7 +185,7 @@ describe("goodwe discovery", () => {
                     }
                 });
                 
-                n1.receive({ payload: "discover" });
+                n1.receive({ payload: { command: "discover", timeout: 500 } });
             });
         });
 
@@ -215,7 +216,7 @@ describe("goodwe discovery", () => {
                     }
                 });
                 
-                n1.receive({ payload: "discover" });
+                n1.receive({ payload: { command: "discover", timeout: 500 } });
             });
         });
     });
@@ -240,7 +241,7 @@ describe("goodwe discovery", () => {
                     done();
                 });
                 
-                n1.receive({ payload: "discover" });
+                n1.receive({ payload: { command: "discover", timeout: 500 } });
                 // Status should be updated during discovery
             });
         });
