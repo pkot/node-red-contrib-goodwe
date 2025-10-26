@@ -94,13 +94,51 @@
     <h3>Inputs</h3>
     <dl class="message-properties">
         <dt>payload <span class="property-type">object | string</span></dt>
-        <dd>Command to execute: "read" for runtime data, "discover" for device discovery</dd>
+        <dd>Command to execute. Can be a string like "read", "discover" or an object with command and parameters.</dd>
+    </dl>
+
+    <h4>Commands</h4>
+    <dl class="message-properties">
+        <dt>read <span class="property-type">string</span></dt>
+        <dd>Read runtime sensor data from the inverter</dd>
+
+        <dt>discover <span class="property-type">string</span></dt>
+        <dd>Discover inverters on the local network</dd>
+
+        <dt>read_settings <span class="property-type">object</span></dt>
+        <dd>Read all configuration settings from the inverter. Example: <code>{ command: "read_settings" }</code></dd>
+
+        <dt>read_setting <span class="property-type">object</span></dt>
+        <dd>Read a specific configuration setting. Example: <code>{ command: "read_setting", setting_id: "grid_export_limit" }</code></dd>
+
+        <dt>write_setting <span class="property-type">object</span></dt>
+        <dd><strong>⚠️ WARNING:</strong> Write a configuration setting. This modifies installer-level parameters. Use with extreme caution!<br>
+        Example: <code>{ command: "write_setting", setting_id: "grid_export_limit", value: 5000 }</code></dd>
+
+        <dt>get_grid_export_limit <span class="property-type">object</span></dt>
+        <dd>Get the current grid export limit in watts. Example: <code>{ command: "get_grid_export_limit" }</code></dd>
+
+        <dt>set_grid_export_limit <span class="property-type">object</span></dt>
+        <dd><strong>⚠️ WARNING:</strong> Set the grid export limit in watts (0-10000W). Example: <code>{ command: "set_grid_export_limit", limit: 5000 }</code></dd>
+
+        <dt>get_operation_mode <span class="property-type">object</span></dt>
+        <dd>Get the current operation mode. Example: <code>{ command: "get_operation_mode" }</code></dd>
+
+        <dt>set_operation_mode <span class="property-type">object</span></dt>
+        <dd><strong>⚠️ WARNING:</strong> Set the operation mode (GENERAL, OFF_GRID, BACKUP, ECO, PEAK_SHAVING).<br>
+        Example: <code>{ command: "set_operation_mode", mode: "ECO", eco_mode_power: 100, eco_mode_soc: 90 }</code></dd>
+
+        <dt>get_battery_dod <span class="property-type">object</span></dt>
+        <dd>Get battery depth of discharge (DoD) in %. Example: <code>{ command: "get_battery_dod" }</code></dd>
+
+        <dt>set_battery_dod <span class="property-type">object</span></dt>
+        <dd><strong>⚠️ WARNING:</strong> Set battery depth of discharge (0-89%). Example: <code>{ command: "set_battery_dod", dod: 85 }</code></dd>
     </dl>
 
     <h3>Outputs</h3>
     <dl class="message-properties">
         <dt>payload <span class="property-type">object</span></dt>
-        <dd>Sensor data and runtime information from the inverter</dd>
+        <dd>Response object containing success status, command, timestamp, and data/error</dd>
     </dl>
 
     <h3>Details</h3>
@@ -109,6 +147,26 @@
     
     <p>The node is based on the <code>marcelblijleven/goodwe</code> Python library and supports
     multiple inverter families including ET, EH, BT, BH, ES, EM, BP, DT, MS, D-NS, and XS series.</p>
+
+    <h4>Configuration Read/Write</h4>
+    <p><strong style="color: red;">⚠️ CRITICAL WARNING:</strong> Configuration write operations modify installer-level parameters
+    that can affect inverter operation, safety, and warranty. Incorrect values may damage equipment or create unsafe conditions.</p>
+    
+    <p><strong>Safety Guidelines:</strong></p>
+    <ul>
+        <li>Always read current settings before making changes</li>
+        <li>Validate parameter values are within safe ranges</li>
+        <li>Document all changes made</li>
+        <li>Consult inverter manual before modifying settings</li>
+        <li>Consider contacting your installer for complex changes</li>
+    </ul>
+
+    <p><strong>Supported Settings:</strong></p>
+    <ul>
+        <li><strong>grid_export_limit:</strong> Maximum power export to grid (0-10000W)</li>
+        <li><strong>operation_mode:</strong> Inverter operation mode (GENERAL, OFF_GRID, BACKUP, ECO, PEAK_SHAVING)</li>
+        <li><strong>battery_dod:</strong> Battery depth of discharge limit (0-89%)</li>
+    </ul>
 
     <h3>References</h3>
     <ul>

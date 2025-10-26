@@ -226,15 +226,93 @@ module.exports = {
      */
     settingsDataResponse: {
         success: true,
-        command: "settings",
+        command: "read_settings",
         timestamp: "2025-10-21T12:00:00.000Z",
         data: {
             grid_export_limit: 5000,        // Grid export limit (W)
-            operation_mode: 1,              // Operation mode
-            battery_discharge_depth: 90,    // Battery DOD (%)
+            operation_mode: "GENERAL",      // Operation mode
+            battery_dod: 85,                // Battery Depth of Discharge (%)
             battery_charge_voltage: 57.6,   // Battery charge voltage (V)
-            grid_peak_shaving: true,       // Peak shaving enabled
-            backup_mode_enable: false       // Backup mode
+            grid_peak_shaving: true,        // Peak shaving enabled
+            backup_mode_enable: false,      // Backup mode
+            eco_mode_power: 100,            // Eco mode power (%)
+            eco_mode_soc: 100               // Eco mode SoC (%)
+        }
+    },
+
+    /**
+     * Configuration read/write mock data
+     */
+    configuration: {
+        /**
+         * Mock settings definition
+         */
+        settings: {
+            grid_export_limit: {
+                id: "grid_export_limit",
+                name: "Grid Export Limit",
+                unit: "W",
+                min: 0,
+                max: 10000,
+                default: 5000,
+                writable: true
+            },
+            operation_mode: {
+                id: "operation_mode",
+                name: "Operation Mode",
+                unit: "",
+                values: ["GENERAL", "OFF_GRID", "BACKUP", "ECO", "PEAK_SHAVING"],
+                default: "GENERAL",
+                writable: true
+            },
+            battery_dod: {
+                id: "battery_dod",
+                name: "Battery Depth of Discharge",
+                unit: "%",
+                min: 0,
+                max: 89,
+                default: 85,
+                writable: true
+            },
+            battery_charge_voltage: {
+                id: "battery_charge_voltage",
+                name: "Battery Charge Voltage",
+                unit: "V",
+                min: 48.0,
+                max: 58.0,
+                default: 57.6,
+                writable: true
+            },
+            eco_mode_power: {
+                id: "eco_mode_power",
+                name: "Eco Mode Power",
+                unit: "%",
+                min: 0,
+                max: 100,
+                default: 100,
+                writable: true
+            },
+            eco_mode_soc: {
+                id: "eco_mode_soc",
+                name: "Eco Mode SoC",
+                unit: "%",
+                min: 0,
+                max: 100,
+                default: 100,
+                writable: true
+            }
+        },
+
+        /**
+         * Current configuration state (mock)
+         */
+        currentState: {
+            grid_export_limit: 5000,
+            operation_mode: "GENERAL",
+            battery_dod: 85,
+            battery_charge_voltage: 57.6,
+            eco_mode_power: 100,
+            eco_mode_soc: 100
         }
     },
 

@@ -8,6 +8,7 @@
  */
 
 const { ProtocolHandler, discoverInverters } = require("../lib/protocol.js");
+const mockInverterData = require("../test/fixtures/mock-inverter-data.js");
 
 module.exports = function(RED) {
     "use strict";
@@ -63,6 +64,64 @@ module.exports = function(RED) {
     }
 
     /**
+     * Mock configuration state (in-memory)
+     * TODO: Replace with actual inverter communication
+     */
+    const mockConfigState = JSON.parse(JSON.stringify(mockInverterData.configuration.currentState));
+
+    /**
+     * Validate setting value
+     * @param {string} settingId - Setting identifier
+     * @param {any} value - Value to validate
+     * @returns {Object} Validation result { valid: boolean, error?: string }
+     */
+    function validateSetting(settingId, value) {
+        const settingDef = mockInverterData.configuration.settings[settingId];
+        
+        if (!settingDef) {
+            return { 
+                valid: false, 
+                error: `Unknown setting: ${settingId}` 
+            };
+        }
+
+        if (!settingDef.writable) {
+            return { 
+                valid: false, 
+                error: `Setting ${settingId} is read-only` 
+            };
+        }
+
+        // Validate based on setting type
+        if (settingDef.values) {
+            // Enum type - check against allowed values
+            if (!settingDef.values.includes(value)) {
+                return { 
+                    valid: false, 
+                    error: `Invalid ${settingDef.name}: ${value}. Must be one of: ${settingDef.values.join(", ")}` 
+                };
+            }
+        } else if (typeof settingDef.min === "number" && typeof settingDef.max === "number") {
+            // Numeric type - check range
+            const numValue = Number(value);
+            if (isNaN(numValue)) {
+                return { 
+                    valid: false, 
+                    error: `Invalid ${settingDef.name}: ${value}. Must be a number` 
+                };
+            }
+            if (numValue < settingDef.min || numValue > settingDef.max) {
+                return { 
+                    valid: false, 
+                    error: `${settingDef.name} out of range: ${value}. Valid range: ${settingDef.min}-${settingDef.max}${settingDef.unit}` 
+                };
+            }
+        }
+
+        return { valid: true };
+    }
+
+    /**
      * GoodWe Node Configuration
      * @param {Object} config - Node configuration
      */
@@ -102,6 +161,16 @@ module.exports = function(RED) {
                 // Handle discovery command
                 if (command === "discover") {
                     await handleDiscovery(node, msg, send, done);
+                    return;
+                }
+
+                // Handle configuration commands
+                if (command.startsWith("read_setting") || 
+                    command === "read_settings" ||
+                    command.startsWith("write_setting") ||
+                    command.startsWith("get_") ||
+                    command.startsWith("set_")) {
+                    await handleConfigurationCommand(node, msg, send, done);
                     return;
                 }
 
@@ -201,6 +270,253 @@ module.exports = function(RED) {
             node.status({});
             done();
         });
+    }
+
+    /**
+     * Handle configuration commands
+     * @param {Object} node - Node instance
+     * @param {Object} msg - Input message
+     * @param {Function} send - Send function
+     * @param {Function} done - Done function
+     */
+    async function handleConfigurationCommand(node, msg, send, done) {
+        try {
+            const command = msg.payload?.command || msg.payload;
+            const payload = msg.payload;
+
+            node.status({ fill: "blue", shape: "dot", text: "reading config..." });
+
+            let response = {
+                success: true,
+                command: command,
+                timestamp: new Date().toISOString(),
+                data: {}
+            };
+
+            // Handle different configuration commands
+            switch (command) {
+            case "read_settings":
+                // Read all settings
+                response.data = JSON.parse(JSON.stringify(mockConfigState));
+                break;
+
+            case "read_setting": {
+                // Read specific setting
+                const settingId = payload.setting_id;
+                if (!settingId) {
+                    const error = new Error("Missing required parameter: setting_id");
+                    error.code = "MISSING_PARAMETER";
+                    throw error;
+                }
+
+                if (!mockInverterData.configuration.settings[settingId]) {
+                    const error = new Error(`Unknown setting: ${settingId}`);
+                    error.code = "INVALID_SETTING";
+                    throw error;
+                }
+
+                response.data = {
+                    setting_id: settingId,
+                    value: mockConfigState[settingId],
+                    unit: mockInverterData.configuration.settings[settingId].unit,
+                    name: mockInverterData.configuration.settings[settingId].name
+                };
+                break;
+            }
+
+            case "write_setting": {
+                // Write specific setting
+                const settingId = payload.setting_id;
+                const value = payload.value;
+
+                if (!settingId) {
+                    const error = new Error("Missing required parameter: setting_id");
+                    error.code = "MISSING_PARAMETER";
+                    throw error;
+                }
+
+                if (value === undefined || value === null) {
+                    const error = new Error("Missing required parameter: value");
+                    error.code = "MISSING_PARAMETER";
+                    throw error;
+                }
+
+                // Validate the setting
+                const validation = validateSetting(settingId, value);
+                if (!validation.valid) {
+                    const error = new Error(validation.error);
+                    error.code = "VALIDATION_ERROR";
+                    throw error;
+                }
+
+                // Store previous value for rollback
+                const previousValue = mockConfigState[settingId];
+
+                // Update the setting (mock)
+                mockConfigState[settingId] = value;
+
+                node.status({ fill: "blue", shape: "dot", text: "writing config..." });
+
+                response.data = {
+                    setting_id: settingId,
+                    value: value,
+                    previous_value: previousValue
+                };
+                break;
+            }
+
+            case "get_grid_export_limit":
+                response.data = {
+                    limit: mockConfigState.grid_export_limit
+                };
+                break;
+
+            case "set_grid_export_limit": {
+                const limit = payload.limit;
+
+                if (limit === undefined || limit === null) {
+                    const error = new Error("Missing required parameter: limit");
+                    error.code = "MISSING_PARAMETER";
+                    throw error;
+                }
+
+                // Validate grid export limit
+                const validation = validateSetting("grid_export_limit", limit);
+                if (!validation.valid) {
+                    const error = new Error(validation.error);
+                    error.code = "VALIDATION_ERROR";
+                    throw error;
+                }
+
+                const previousLimit = mockConfigState.grid_export_limit;
+                mockConfigState.grid_export_limit = limit;
+
+                node.status({ fill: "blue", shape: "dot", text: "setting export limit..." });
+
+                response.data = {
+                    limit: limit,
+                    previous_limit: previousLimit
+                };
+                break;
+            }
+
+            case "get_operation_mode":
+                response.data = {
+                    mode: mockConfigState.operation_mode,
+                    eco_mode_power: mockConfigState.eco_mode_power,
+                    eco_mode_soc: mockConfigState.eco_mode_soc
+                };
+                break;
+
+            case "set_operation_mode": {
+                const mode = payload.mode;
+                const ecoModePower = payload.eco_mode_power || 100;
+                const ecoModeSoc = payload.eco_mode_soc || 100;
+
+                if (!mode) {
+                    const error = new Error("Missing required parameter: mode");
+                    error.code = "MISSING_PARAMETER";
+                    throw error;
+                }
+
+                // Validate operation mode
+                const validation = validateSetting("operation_mode", mode);
+                if (!validation.valid) {
+                    const error = new Error(validation.error);
+                    error.code = "VALIDATION_ERROR";
+                    throw error;
+                }
+
+                const previousMode = mockConfigState.operation_mode;
+                mockConfigState.operation_mode = mode;
+                mockConfigState.eco_mode_power = ecoModePower;
+                mockConfigState.eco_mode_soc = ecoModeSoc;
+
+                node.status({ fill: "blue", shape: "dot", text: "setting operation mode..." });
+
+                response.data = {
+                    mode: mode,
+                    eco_mode_power: ecoModePower,
+                    eco_mode_soc: ecoModeSoc,
+                    previous_mode: previousMode
+                };
+                break;
+            }
+
+            case "get_battery_dod":
+                response.data = {
+                    dod: mockConfigState.battery_dod
+                };
+                break;
+
+            case "set_battery_dod": {
+                const dod = payload.dod;
+
+                if (dod === undefined || dod === null) {
+                    const error = new Error("Missing required parameter: dod");
+                    error.code = "MISSING_PARAMETER";
+                    throw error;
+                }
+
+                // Validate battery DoD
+                const validation = validateSetting("battery_dod", dod);
+                if (!validation.valid) {
+                    const error = new Error(validation.error);
+                    error.code = "VALIDATION_ERROR";
+                    throw error;
+                }
+
+                const previousDod = mockConfigState.battery_dod;
+                mockConfigState.battery_dod = dod;
+
+                node.status({ fill: "blue", shape: "dot", text: "setting battery DoD..." });
+
+                response.data = {
+                    dod: dod,
+                    previous_dod: previousDod
+                };
+                break;
+            }
+
+            default: {
+                const error = new Error(`Unknown configuration command: ${command}`);
+                error.code = "UNKNOWN_COMMAND";
+                throw error;
+            }
+            }
+
+            // Prepare output message
+            const outputMsg = Object.assign({}, msg);
+            outputMsg.payload = response;
+            outputMsg.topic = outputMsg.topic || `goodwe/${command}`;
+
+            node.status({ fill: "green", shape: "dot", text: "ok" });
+            setTimeout(() => {
+                node.status({ fill: "grey", shape: "ring", text: "disconnected" });
+            }, 2000);
+
+            send(outputMsg);
+            done();
+        } catch (err) {
+            const errorResponse = {
+                success: false,
+                command: msg.payload?.command || msg.payload,
+                timestamp: new Date().toISOString(),
+                error: {
+                    code: err.code || "CONFIG_ERROR",
+                    message: err.message,
+                    details: err.stack
+                }
+            };
+
+            const outputMsg = Object.assign({}, msg);
+            outputMsg.payload = errorResponse;
+            outputMsg.topic = outputMsg.topic || "goodwe/error";
+
+            node.status({ fill: "red", shape: "ring", text: "config error" });
+            send(outputMsg);
+            done();
+        }
     }
 
     /**
