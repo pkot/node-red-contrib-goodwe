@@ -1,0 +1,66 @@
+[
+    {
+        "id": "config1",
+        "type": "goodwe-config",
+        "name": "My GoodWe Inverter",
+        "host": "192.168.1.100",
+        "port": 8899,
+        "protocol": "udp",
+        "family": "ET"
+    },
+    {
+        "id": "inject1",
+        "type": "inject",
+        "name": "Set Grid Export Limit to 5000W",
+        "payload": "{\"setting_id\":\"grid_export_limit\",\"value\":5000}",
+        "payloadType": "json",
+        "topic": "",
+        "x": 230,
+        "y": 120,
+        "wires": [["write1"]]
+    },
+    {
+        "id": "inject2",
+        "type": "inject",
+        "name": "Set Operation Mode to ECO",
+        "payload": "{\"setting_id\":\"operation_mode\",\"value\":\"ECO\"}",
+        "payloadType": "json",
+        "topic": "",
+        "x": 210,
+        "y": 180,
+        "wires": [["write1"]]
+    },
+    {
+        "id": "write1",
+        "type": "goodwe-write",
+        "name": "Write Setting",
+        "config": "config1",
+        "confirm": false,
+        "x": 500,
+        "y": 150,
+        "wires": [["debug1"]]
+    },
+    {
+        "id": "debug1",
+        "type": "debug",
+        "name": "Write Result",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 700,
+        "y": 150,
+        "wires": []
+    },
+    {
+        "id": "comment1",
+        "type": "comment",
+        "name": "⚠️ WARNING: Use with caution!",
+        "info": "Writing settings can damage your inverter or void warranty.\nAlways verify the setting and value before using.",
+        "x": 200,
+        "y": 60,
+        "wires": []
+    }
+]

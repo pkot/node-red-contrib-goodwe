@@ -12,10 +12,35 @@ This project is a Node-RED port of the excellent [marcelblijleven/goodwe](https:
 
 - 🔌 Connect to GoodWe inverters over local network (UDP or Modbus TCP)
 - 📊 Read runtime sensor values (power generation, voltage, current, etc.)
+- ✍️ Write configuration settings (grid export limit, operation mode, etc.)
 - 🔍 Inverter discovery on local network
+- ℹ️ Retrieve device information (model, serial, firmware)
 - 🎯 Support for multiple inverter families (ET, EH, BT, BH, ES, EM, BP, DT, MS, D-NS, XS)
 - ⚡ Asynchronous communication with proper error handling
 - 🎨 User-friendly Node-RED configuration interface
+- 🧩 **NEW:** Specialized nodes for different operations (config, read, write, discover, info)
+
+## Quick Start
+
+### Using Specialized Nodes (Recommended)
+
+The new architecture provides separate nodes for different operations:
+
+1. **Create a config node** - Stores connection settings (shared across operations)
+2. **Add operational nodes** - Choose from read, write, discover, or info nodes
+3. **Connect and use** - Wire nodes together in your flow
+
+**Example Flow:**
+
+```
+[Inject] → [goodwe-read] → [Debug]
+         ↓
+   [goodwe-config]
+```
+
+### Using Legacy Node
+
+The original unified `goodwe-legacy` node is still available for backward compatibility. See [Migration Guide](docs/MIGRATION.md) for details.
 
 ## Installation
 
@@ -42,41 +67,134 @@ npm install node-red-contrib-goodwe
 
 ## Usage
 
-### Basic Configuration
+### Configuration Node
 
-1. Drag the **goodwe** node from the palette to your flow
-2. Double-click to configure:
-   - **Host**: IP address or hostname of your GoodWe inverter (e.g., `192.168.1.100`)
-   - **Protocol**: Choose UDP (port 8899) or Modbus TCP (port 502)
-   - **Port**: Communication port (default: 8899 for UDP, 502 for Modbus)
-   - **Inverter Family**: Select your inverter series (ET, EH, BT, etc.)
-3. Wire the node to an inject node for triggering reads and a debug node for output
+First, create a **goodwe-config** node to store your inverter connection settings:
 
-### Example Flow
+1. Add any operational node (read, write, info) to your flow
+2. Click the pencil icon next to "Config" to create a new config node
+3. Configure:
+   - **Host**: IP address or hostname (e.g., `192.168.1.100`)
+   - **Protocol**: UDP (port 8899) or Modbus TCP (port 502)
+   - **Inverter Family**: Select your series (ET, ES, or DT)
+   - **Timeout/Retries**: Advanced settings (optional)
+4. Save the config node
 
+### Reading Runtime Data
+
+Use the **goodwe-read** node to retrieve sensor data from your inverter.
+
+**Example Flow:**
 ```json
 [
     {
-        "id": "inject-node",
-        "type": "inject",
-        "name": "Read inverter data",
-        "repeat": "60",
-        "payload": "read",
-        "wires": [["goodwe-node"]]
-    },
-    {
-        "id": "goodwe-node",
-        "type": "goodwe",
-        "name": "My GoodWe Inverter",
+        "id": "config1",
+        "type": "goodwe-config",
         "host": "192.168.1.100",
-        "port": "8899",
+        "port": 8899,
         "protocol": "udp",
         "family": "ET"
+    },
+    {
+        "id": "read1",
+        "type": "goodwe-read",
+        "config": "config1",
+        "pollingInterval": 10,
+        "outputFormat": "flat",
+        "wires": [["debug1"]]
+    },
+    {
+        "id": "debug1",
+        "type": "debug"
     }
 ]
 ```
 
-See the [examples](./examples/) folder for more usage examples.
+**Output:**
+```json
+{
+    "payload": {
+        "vpv1": 245.5,
+        "ipv1": 6.2,
+        "ppv1": 1522,
+        "battery_soc": 87,
+        "vgrid": 230.5,
+        "e_day": 15.2,
+        ...
+    },
+    "topic": "goodwe/runtime_data",
+    "_timestamp": "2025-11-02T17:00:00.000Z",
+    "_inverter": {
+        "family": "ET",
+        "host": "192.168.1.100"
+    }
+}
+```
+
+### Discovering Inverters
+
+Use the **goodwe-discover** node to find inverters on your network.
+
+**Example Flow:**
+```json
+[
+    {
+        "id": "inject1",
+        "type": "inject",
+        "once": true,
+        "payload": true,
+        "wires": [["discover1"]]
+    },
+    {
+        "id": "discover1",
+        "type": "goodwe-discover",
+        "timeout": 5000,
+        "wires": [["debug1"]]
+    }
+]
+```
+
+### Writing Settings
+
+Use the **goodwe-write** node to modify inverter configuration.
+
+⚠️ **WARNING**: Writing settings can damage your inverter or void warranty. Use with extreme caution!
+
+**Example Flow:**
+```json
+msg.payload = {
+    "setting_id": "grid_export_limit",
+    "value": 5000
+}
+```
+
+### Getting Device Info
+
+Use the **goodwe-info** node to retrieve device information.
+
+**Example Flow:**
+```
+[Inject] → [goodwe-info] → [Debug]
+         ↓
+   [goodwe-config]
+```
+
+**Output:**
+```json
+{
+    "payload": {
+        "model_name": "GW5000-EH",
+        "serial_number": "ETxxxxxxxx",
+        "rated_power": 5000,
+        "firmware": "V1.2.3",
+        "family": "ET"
+    }
+}
+```
+
+### Legacy Node
+
+For backward compatibility, the original unified node is available as **goodwe-legacy**. See [Migration Guide](docs/MIGRATION.md) for migration instructions.
 
 ## Supported Inverter Families
 

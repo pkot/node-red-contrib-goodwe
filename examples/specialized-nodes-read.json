@@ -1,0 +1,52 @@
+[
+    {
+        "id": "config1",
+        "type": "goodwe-config",
+        "name": "My GoodWe Inverter",
+        "host": "192.168.1.100",
+        "port": 8899,
+        "protocol": "udp",
+        "family": "ET",
+        "timeout": 1000,
+        "retries": 3,
+        "commAddr": "auto",
+        "keepAlive": true
+    },
+    {
+        "id": "inject1",
+        "type": "inject",
+        "name": "Read every 10 seconds",
+        "repeat": "10",
+        "payload": "true",
+        "payloadType": "bool",
+        "topic": "",
+        "x": 180,
+        "y": 120,
+        "wires": [["read1"]]
+    },
+    {
+        "id": "read1",
+        "type": "goodwe-read",
+        "name": "Read Inverter Data",
+        "config": "config1",
+        "outputFormat": "flat",
+        "pollingInterval": 0,
+        "x": 400,
+        "y": 120,
+        "wires": [["debug1"]]
+    },
+    {
+        "id": "debug1",
+        "type": "debug",
+        "name": "Show Data",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 600,
+        "y": 120,
+        "wires": []
+    }
+]
