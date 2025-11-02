@@ -5,7 +5,12 @@
         color: '#3FADB5',
         defaults: {
             name: { value: "" },
-            timeout: { value: 5000, validate: RED.validators.number() },
+            timeout: { 
+                value: 5000, 
+                validate: function(v) {
+                    return RED.validators.number()(v) && v >= 1000;
+                }
+            },
             broadcastAddress: { value: "255.255.255.255" }
         },
         inputs: 1,

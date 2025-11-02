@@ -7,6 +7,9 @@
 
 const { discoverInverters } = require("../lib/protocol.js");
 
+// Constants
+const DEFAULT_PORT = 8899;
+
 module.exports = function(RED) {
     "use strict";
 
@@ -45,7 +48,7 @@ module.exports = function(RED) {
                 // Format discovered inverters according to specification
                 const devices = inverters.map(inv => ({
                     host: inv.ip,
-                    port: inv.port || 8899,
+                    port: inv.port || DEFAULT_PORT,
                     model: inv.modelName || "GoodWe Inverter",
                     serial: inv.serialNumber || "UNKNOWN",
                     family: inv.family || "ET",
