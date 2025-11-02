@@ -23,7 +23,7 @@ module.exports = function(RED) {
         this.timeout = config.timeout || 1000;
         this.retries = config.retries || 3;
         this.commAddr = config.commAddr || "auto";
-        this.keepAlive = config.keepAlive !== false; // Default to true
+        this.keepAlive = config.keepAlive === undefined ? true : config.keepAlive; // Default to true
         
         // Connection state
         this.connection = null;
