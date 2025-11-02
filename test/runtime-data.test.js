@@ -10,6 +10,7 @@
 
 const helper = require("node-red-node-test-helper");
 const goodweNode = require("../nodes/goodwe.js");
+const configNode = require("../nodes/config.js");
 const mockData = require("./fixtures/mock-inverter-data.js");
 const testUtils = require("./test-utils.js");
 
@@ -37,7 +38,7 @@ describe("Runtime Data Retrieval", function () {
                 family: "ET"
             });
 
-            helper.load(goodweNode, flow, function () {
+            helper.load([configNode, goodweNode], flow, function () {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 
@@ -61,7 +62,7 @@ describe("Runtime Data Retrieval", function () {
         it("should retrieve runtime data on empty input (default read)", function (done) {
             const flow = testUtils.createBasicFlow();
 
-            helper.load(goodweNode, flow, function () {
+            helper.load([configNode, goodweNode], flow, function () {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 
@@ -82,7 +83,7 @@ describe("Runtime Data Retrieval", function () {
         it("should include all required sensor fields in runtime data", function (done) {
             const flow = testUtils.createBasicFlow({ family: "ET" });
 
-            helper.load(goodweNode, flow, function () {
+            helper.load([configNode, goodweNode], flow, function () {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 
@@ -124,7 +125,7 @@ describe("Runtime Data Retrieval", function () {
                 host: "192.168.1.101"
             });
 
-            helper.load(goodweNode, flow, function () {
+            helper.load([configNode, goodweNode], flow, function () {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 
@@ -153,7 +154,7 @@ describe("Runtime Data Retrieval", function () {
         it("should output message with correct structure", function (done) {
             const flow = testUtils.createBasicFlow();
 
-            helper.load(goodweNode, flow, function () {
+            helper.load([configNode, goodweNode], flow, function () {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 
@@ -184,7 +185,7 @@ describe("Runtime Data Retrieval", function () {
         it("should preserve original message properties", function (done) {
             const flow = testUtils.createBasicFlow();
 
-            helper.load(goodweNode, flow, function () {
+            helper.load([configNode, goodweNode], flow, function () {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 
@@ -208,7 +209,7 @@ describe("Runtime Data Retrieval", function () {
         it("should set topic if not provided", function (done) {
             const flow = testUtils.createBasicFlow();
 
-            helper.load(goodweNode, flow, function () {
+            helper.load([configNode, goodweNode], flow, function () {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 
@@ -228,7 +229,7 @@ describe("Runtime Data Retrieval", function () {
         it("should preserve existing topic", function (done) {
             const flow = testUtils.createBasicFlow();
 
-            helper.load(goodweNode, flow, function () {
+            helper.load([configNode, goodweNode], flow, function () {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 
@@ -254,7 +255,7 @@ describe("Runtime Data Retrieval", function () {
         it("should map voltage sensors correctly", function (done) {
             const flow = testUtils.createBasicFlow();
 
-            helper.load(goodweNode, flow, function () {
+            helper.load([configNode, goodweNode], flow, function () {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 
@@ -285,7 +286,7 @@ describe("Runtime Data Retrieval", function () {
         it("should map current sensors correctly", function (done) {
             const flow = testUtils.createBasicFlow();
 
-            helper.load(goodweNode, flow, function () {
+            helper.load([configNode, goodweNode], flow, function () {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 
@@ -314,7 +315,7 @@ describe("Runtime Data Retrieval", function () {
         it("should map power sensors correctly", function (done) {
             const flow = testUtils.createBasicFlow();
 
-            helper.load(goodweNode, flow, function () {
+            helper.load([configNode, goodweNode], flow, function () {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 
@@ -342,7 +343,7 @@ describe("Runtime Data Retrieval", function () {
         it("should map energy statistics correctly", function (done) {
             const flow = testUtils.createBasicFlow();
 
-            helper.load(goodweNode, flow, function () {
+            helper.load([configNode, goodweNode], flow, function () {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 
@@ -373,19 +374,24 @@ describe("Runtime Data Retrieval", function () {
         it("should handle missing host configuration", function (done) {
             const flow = [
                 {
-                    id: "n1",
-                    type: "goodwe",
-                    name: "test goodwe",
+                    id: "c1",
+                    type: "goodwe-config",
                     host: "invalid", // Invalid host to trigger error
                     port: 8899,
                     protocol: "udp",
-                    family: "ET",
+                    family: "ET"
+                },
+                {
+                    id: "n1",
+                    type: "goodwe",
+                    name: "test goodwe",
+                    config: "c1",
                     wires: [["n2"]]
                 },
                 { id: "n2", type: "helper" }
             ];
 
-            helper.load(goodweNode, flow, function () {
+            helper.load([configNode, goodweNode], flow, function () {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 
@@ -408,19 +414,24 @@ describe("Runtime Data Retrieval", function () {
         it("should include error details in response", function (done) {
             const flow = [
                 {
+                    id: "c1",
+                    type: "goodwe-config",
+                    host: "invalid",
+                    port: 8899,
+                    protocol: "udp",
+                    family: "ET"
+                },
+                {
                     id: "n1",
                     type: "goodwe",
                     name: "test goodwe",
-                    host: "", // Empty host to trigger error
-                    port: 8899,
-                    protocol: "udp",
-                    family: "ET",
+                    config: "c1",
                     wires: [["n2"]]
                 },
                 { id: "n2", type: "helper" }
             ];
 
-            helper.load(goodweNode, flow, function () {
+            helper.load([configNode, goodweNode], flow, function () {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 
@@ -443,19 +454,24 @@ describe("Runtime Data Retrieval", function () {
         it("should update node status to error on failure", function (done) {
             const flow = [
                 {
-                    id: "n1",
-                    type: "goodwe",
-                    name: "test goodwe",
+                    id: "c1",
+                    type: "goodwe-config",
                     host: "",
                     port: 8899,
                     protocol: "udp",
-                    family: "ET",
+                    family: "ET"
+                },
+                {
+                    id: "n1",
+                    type: "goodwe",
+                    name: "test goodwe",
+                    config: "c1",
                     wires: [["n2"]]
                 },
                 { id: "n2", type: "helper" }
             ];
 
-            helper.load(goodweNode, flow, function () {
+            helper.load([configNode, goodweNode], flow, function () {
                 const n1 = helper.getNode("n1");
                 const statusCalls = testUtils.captureStatusCalls(n1);
 

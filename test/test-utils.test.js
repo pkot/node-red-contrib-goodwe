@@ -7,6 +7,7 @@
 
 const helper = require("node-red-node-test-helper");
 const goodweNode = require("../nodes/goodwe.js");
+const configNode = require("../nodes/config.js");
 const testUtils = require("./test-utils");
 const mockData = require("./fixtures/mock-inverter-data");
 
@@ -24,7 +25,7 @@ describe("Example: Using Test Utilities", () => {
                 family: "ET"
             });
             
-            const nodes = await testUtils.loadFlowWithNodes(goodweNode, flow);
+            const nodes = await testUtils.loadFlowWithNodes([configNode, goodweNode], flow);
             
             expect(nodes.n1).toBeDefined();
             expect(nodes.n1.host).toBe("192.168.1.100");
@@ -35,7 +36,7 @@ describe("Example: Using Test Utilities", () => {
     describe("Send and wait pattern", () => {
         it("should send message and wait for response", async () => {
             const flow = testUtils.createBasicFlow();
-            const nodes = await testUtils.loadFlowWithNodes(goodweNode, flow);
+            const nodes = await testUtils.loadFlowWithNodes([configNode, goodweNode], flow);
             
             const response = await testUtils.sendAndWait(
                 nodes.n1,
@@ -51,7 +52,7 @@ describe("Example: Using Test Utilities", () => {
     describe("Using mock data", () => {
         it("should work with mock runtime data", async () => {
             const flow = testUtils.createBasicFlow();
-            const nodes = await testUtils.loadFlowWithNodes(goodweNode, flow);
+            const nodes = await testUtils.loadFlowWithNodes([configNode, goodweNode], flow);
             
             const response = await testUtils.sendAndWait(
                 nodes.n1,
@@ -73,7 +74,7 @@ describe("Example: Using Test Utilities", () => {
     describe("Status monitoring", () => {
         it("should capture status updates", async () => {
             const flow = testUtils.createBasicFlow();
-            const nodes = await testUtils.loadFlowWithNodes(goodweNode, flow);
+            const nodes = await testUtils.loadFlowWithNodes([configNode, goodweNode], flow);
             
             const statusCalls = testUtils.captureStatusCalls(nodes.n1);
             
@@ -108,7 +109,7 @@ describe("Example: Using Test Utilities", () => {
     describe("Message structure assertions", () => {
         it("should validate message structure easily", async () => {
             const flow = testUtils.createBasicFlow();
-            const nodes = await testUtils.loadFlowWithNodes(goodweNode, flow);
+            const nodes = await testUtils.loadFlowWithNodes([configNode, goodweNode], flow);
             
             const response = await testUtils.sendAndWait(
                 nodes.n1,
@@ -128,7 +129,7 @@ describe("Example: Using Test Utilities", () => {
     describe("Custom message properties", () => {
         it("should preserve custom properties", async () => {
             const flow = testUtils.createBasicFlow();
-            const nodes = await testUtils.loadFlowWithNodes(goodweNode, flow);
+            const nodes = await testUtils.loadFlowWithNodes([configNode, goodweNode], flow);
             
             const customMessage = testUtils.sampleMessages.withProperties(
                 "read",

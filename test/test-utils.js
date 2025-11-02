@@ -8,30 +8,38 @@
 const helper = require("node-red-node-test-helper");
 
 /**
- * Creates a standard test flow with a GoodWe node and helper node
+ * Creates a standard test flow with a GoodWe config node and GoodWe node
  * 
- * @param {Object} config - GoodWe node configuration
+ * @param {Object} config - Configuration options
  * @param {string} config.id - Node ID (default: "n1")
+ * @param {string} config.configId - Config node ID (default: "c1")
  * @param {string} config.name - Node name
- * @param {string} config.host - Inverter host address
- * @param {number} config.port - Communication port
- * @param {string} config.protocol - Protocol (udp/modbus)
- * @param {string} config.family - Inverter family
+ * @param {string} config.host - Inverter host address (for config node)
+ * @param {number} config.port - Communication port (for config node)
+ * @param {string} config.protocol - Protocol (udp/modbus) (for config node)
+ * @param {string} config.family - Inverter family (for config node)
  * @returns {Array} Node-RED flow array
  */
 function createBasicFlow(config = {}) {
     const nodeId = config.id || "n1";
+    const configId = config.configId || "c1";
     const helperId = config.helperId || "n2";
 
     return [
         {
-            id: nodeId,
-            type: "goodwe",
-            name: config.name || "test goodwe",
+            id: configId,
+            type: "goodwe-config",
+            name: config.configName || "test config",
             host: config.host || "192.168.1.100",
             port: config.port || 8899,
             protocol: config.protocol || "udp",
-            family: config.family || "ET",
+            family: config.family || "ET"
+        },
+        {
+            id: nodeId,
+            type: "goodwe",
+            name: config.name || "test goodwe",
+            config: configId,
             wires: [[helperId]]
         },
         { id: helperId, type: "helper" }
@@ -39,7 +47,7 @@ function createBasicFlow(config = {}) {
 }
 
 /**
- * Creates a flow with multiple GoodWe nodes
+ * Creates a flow with multiple GoodWe nodes sharing config nodes
  * 
  * @param {Array} configs - Array of node configurations
  * @returns {Array} Node-RED flow array
@@ -49,16 +57,26 @@ function createMultiNodeFlow(configs) {
     
     configs.forEach((config, index) => {
         const nodeId = config.id || `n${index + 1}`;
+        const configId = config.configId || `c${index + 1}`;
         const helperId = config.helperId || `h${index + 1}`;
         
+        // Add config node
+        flow.push({
+            id: configId,
+            type: "goodwe-config",
+            name: config.configName || `test config ${index + 1}`,
+            host: config.host || `192.168.1.${100 + index}`,
+            port: config.port || 8899,
+            protocol: config.protocol || "udp",
+            family: config.family || "ET"
+        });
+        
+        // Add goodwe node
         flow.push({
             id: nodeId,
             type: "goodwe",
             name: config.name || `test goodwe ${index + 1}`,
-            host: config.host || `192.168.1.${100 + index}`,
-            port: config.port || 8899,
-            protocol: config.protocol || "udp",
-            family: config.family || "ET",
+            config: configId,
             wires: [[helperId]]
         });
         

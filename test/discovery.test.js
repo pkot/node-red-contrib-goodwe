@@ -7,6 +7,7 @@
 
 const helper = require("node-red-node-test-helper");
 const goodweNode = require("../nodes/goodwe.js");
+const configNode = require("../nodes/config.js");
 const { discoverInverters } = require("../lib/protocol.js");
 
 helper.init(require.resolve("node-red"));
@@ -25,16 +26,25 @@ describe("goodwe discovery", () => {
     describe("discovery command", () => {
         it("should handle discover command", (done) => {
             const flow = [
+                {
+                    id: "c1",
+                    type: "goodwe-config",
+                    host: "192.168.1.100",
+                    port: 8899,
+                    protocol: "udp",
+                    family: "ET"
+                },
                 { 
                     id: "n1", 
                     type: "goodwe",
                     name: "test discover",
+                    config: "c1",
                     wires: [["n2"]]
                 },
                 { id: "n2", type: "helper" }
             ];
             
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
                 
@@ -69,16 +79,25 @@ describe("goodwe discovery", () => {
 
         it("should handle discover command with object payload", (done) => {
             const flow = [
-                { 
-                    id: "n1", 
+                {
+                    id: "c1",
+                    type: "goodwe-config",
+                    host: "192.168.1.100",
+                    port: 8899,
+                    protocol: "udp",
+                    family: "ET"
+                },
+                {
+                    id: "n1",
                     type: "goodwe",
+                    config: "c1",
                     name: "test discover",
                     wires: [["n2"]]
                 },
                 { id: "n2", type: "helper" }
             ];
             
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
                 
@@ -98,15 +117,24 @@ describe("goodwe discovery", () => {
 
         it("should include timestamp in discovery response", (done) => {
             const flow = [
-                { 
-                    id: "n1", 
+                {
+                    id: "c1",
+                    type: "goodwe-config",
+                    host: "192.168.1.100",
+                    port: 8899,
+                    protocol: "udp",
+                    family: "ET"
+                },
+                {
+                    id: "n1",
                     type: "goodwe",
+                    config: "c1",
                     wires: [["n2"]]
                 },
                 { id: "n2", type: "helper" }
             ];
             
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
                 
@@ -128,15 +156,24 @@ describe("goodwe discovery", () => {
 
         it("should preserve message properties during discovery", (done) => {
             const flow = [
-                { 
-                    id: "n1", 
+                {
+                    id: "c1",
+                    type: "goodwe-config",
+                    host: "192.168.1.100",
+                    port: 8899,
+                    protocol: "udp",
+                    family: "ET"
+                },
+                {
+                    id: "n1",
                     type: "goodwe",
+                    config: "c1",
                     wires: [["n2"]]
                 },
                 { id: "n2", type: "helper" }
             ];
             
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
                 
@@ -161,15 +198,24 @@ describe("goodwe discovery", () => {
     describe("discovery response format", () => {
         it("should return array of inverters on success", (done) => {
             const flow = [
-                { 
-                    id: "n1", 
+                {
+                    id: "c1",
+                    type: "goodwe-config",
+                    host: "192.168.1.100",
+                    port: 8899,
+                    protocol: "udp",
+                    family: "ET"
+                },
+                {
+                    id: "n1",
                     type: "goodwe",
+                    config: "c1",
                     wires: [["n2"]]
                 },
                 { id: "n2", type: "helper" }
             ];
             
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
                 
@@ -191,15 +237,24 @@ describe("goodwe discovery", () => {
 
         it("should return count of discovered inverters on success", (done) => {
             const flow = [
-                { 
-                    id: "n1", 
+                {
+                    id: "c1",
+                    type: "goodwe-config",
+                    host: "192.168.1.100",
+                    port: 8899,
+                    protocol: "udp",
+                    family: "ET"
+                },
+                {
+                    id: "n1",
                     type: "goodwe",
+                    config: "c1",
                     wires: [["n2"]]
                 },
                 { id: "n2", type: "helper" }
             ];
             
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
                 
@@ -224,15 +279,24 @@ describe("goodwe discovery", () => {
     describe("discovery status updates", () => {
         it("should update status to 'discovering' during discovery", (done) => {
             const flow = [
-                { 
-                    id: "n1", 
+                {
+                    id: "c1",
+                    type: "goodwe-config",
+                    host: "192.168.1.100",
+                    port: 8899,
+                    protocol: "udp",
+                    family: "ET"
+                },
+                {
+                    id: "n1",
                     type: "goodwe",
+                    config: "c1",
                     wires: [["n2"]]
                 },
                 { id: "n2", type: "helper" }
             ];
             
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
                 

@@ -7,6 +7,7 @@
 
 const helper = require("node-red-node-test-helper");
 const goodweNode = require("../nodes/goodwe.js");
+const configNode = require("../nodes/config.js");
 const mockInverterData = require("./fixtures/mock-inverter-data.js");
 
 helper.init(require.resolve("node-red"));
@@ -25,11 +26,18 @@ describe("Configuration Operations", () => {
     describe("Read Settings", () => {
         it("should read all settings with read_settings command", (done) => {
             const flow = [
-                { 
-                    id: "n1", 
-                    type: "goodwe", 
-                    name: "test goodwe",
-                    host: "192.168.1.100",
+        { 
+            id: "c18",
+            type: "goodwe-config",
+            host: "192.168.1.100",
+            port: 8899,
+            protocol: "udp",
+            family: "ET"
+        },
+        {
+            id: "n1",
+            type: "goodwe",
+            config: "c18",
                     port: "8899",
                     protocol: "udp",
                     family: "ET",
@@ -38,7 +46,7 @@ describe("Configuration Operations", () => {
                 { id: "n2", type: "helper" }
             ];
 
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 
@@ -67,11 +75,18 @@ describe("Configuration Operations", () => {
 
         it("should read specific setting with read_setting command", (done) => {
             const flow = [
-                { 
-                    id: "n1", 
-                    type: "goodwe", 
-                    name: "test goodwe",
-                    host: "192.168.1.100",
+        { 
+            id: "c17",
+            type: "goodwe-config",
+            host: "192.168.1.100",
+            port: 8899,
+            protocol: "udp",
+            family: "ET"
+        },
+        {
+            id: "n1",
+            type: "goodwe",
+            config: "c17",
                     port: "8899",
                     protocol: "udp",
                     family: "ET",
@@ -80,7 +95,7 @@ describe("Configuration Operations", () => {
                 { id: "n2", type: "helper" }
             ];
 
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 
@@ -109,11 +124,18 @@ describe("Configuration Operations", () => {
 
         it("should handle invalid setting_id gracefully", (done) => {
             const flow = [
-                { 
-                    id: "n1", 
-                    type: "goodwe", 
-                    name: "test goodwe",
-                    host: "192.168.1.100",
+        { 
+            id: "c16",
+            type: "goodwe-config",
+            host: "192.168.1.100",
+            port: 8899,
+            protocol: "udp",
+            family: "ET"
+        },
+        {
+            id: "n1",
+            type: "goodwe",
+            config: "c16",
                     port: "8899",
                     protocol: "udp",
                     family: "ET",
@@ -122,7 +144,7 @@ describe("Configuration Operations", () => {
                 { id: "n2", type: "helper" }
             ];
 
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 
@@ -151,11 +173,18 @@ describe("Configuration Operations", () => {
     describe("Write Settings", () => {
         it("should write setting with write_setting command", (done) => {
             const flow = [
-                { 
-                    id: "n1", 
-                    type: "goodwe", 
-                    name: "test goodwe",
-                    host: "192.168.1.100",
+        { 
+            id: "c15",
+            type: "goodwe-config",
+            host: "192.168.1.100",
+            port: 8899,
+            protocol: "udp",
+            family: "ET"
+        },
+        {
+            id: "n1",
+            type: "goodwe",
+            config: "c15",
                     port: "8899",
                     protocol: "udp",
                     family: "ET",
@@ -164,7 +193,7 @@ describe("Configuration Operations", () => {
                 { id: "n2", type: "helper" }
             ];
 
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 
@@ -194,11 +223,18 @@ describe("Configuration Operations", () => {
 
         it("should validate setting value before writing", (done) => {
             const flow = [
-                { 
-                    id: "n1", 
-                    type: "goodwe", 
-                    name: "test goodwe",
-                    host: "192.168.1.100",
+        { 
+            id: "c14",
+            type: "goodwe-config",
+            host: "192.168.1.100",
+            port: 8899,
+            protocol: "udp",
+            family: "ET"
+        },
+        {
+            id: "n1",
+            type: "goodwe",
+            config: "c14",
                     port: "8899",
                     protocol: "udp",
                     family: "ET",
@@ -207,7 +243,7 @@ describe("Configuration Operations", () => {
                 { id: "n2", type: "helper" }
             ];
 
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 
@@ -235,11 +271,18 @@ describe("Configuration Operations", () => {
 
         it("should reject write without required value parameter", (done) => {
             const flow = [
-                { 
-                    id: "n1", 
-                    type: "goodwe", 
-                    name: "test goodwe",
-                    host: "192.168.1.100",
+        { 
+            id: "c13",
+            type: "goodwe-config",
+            host: "192.168.1.100",
+            port: 8899,
+            protocol: "udp",
+            family: "ET"
+        },
+        {
+            id: "n1",
+            type: "goodwe",
+            config: "c13",
                     port: "8899",
                     protocol: "udp",
                     family: "ET",
@@ -248,7 +291,7 @@ describe("Configuration Operations", () => {
                 { id: "n2", type: "helper" }
             ];
 
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 
@@ -278,11 +321,18 @@ describe("Configuration Operations", () => {
     describe("Specialized Configuration APIs", () => {
         it("should get grid export limit", (done) => {
             const flow = [
-                { 
-                    id: "n1", 
-                    type: "goodwe", 
-                    name: "test goodwe",
-                    host: "192.168.1.100",
+        { 
+            id: "c12",
+            type: "goodwe-config",
+            host: "192.168.1.100",
+            port: 8899,
+            protocol: "udp",
+            family: "ET"
+        },
+        {
+            id: "n1",
+            type: "goodwe",
+            config: "c12",
                     port: "8899",
                     protocol: "udp",
                     family: "ET",
@@ -291,7 +341,7 @@ describe("Configuration Operations", () => {
                 { id: "n2", type: "helper" }
             ];
 
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 
@@ -315,11 +365,18 @@ describe("Configuration Operations", () => {
 
         it("should set grid export limit", (done) => {
             const flow = [
-                { 
-                    id: "n1", 
-                    type: "goodwe", 
-                    name: "test goodwe",
-                    host: "192.168.1.100",
+        { 
+            id: "c11",
+            type: "goodwe-config",
+            host: "192.168.1.100",
+            port: 8899,
+            protocol: "udp",
+            family: "ET"
+        },
+        {
+            id: "n1",
+            type: "goodwe",
+            config: "c11",
                     port: "8899",
                     protocol: "udp",
                     family: "ET",
@@ -328,7 +385,7 @@ describe("Configuration Operations", () => {
                 { id: "n2", type: "helper" }
             ];
 
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 
@@ -356,11 +413,18 @@ describe("Configuration Operations", () => {
 
         it("should get operation mode", (done) => {
             const flow = [
-                { 
-                    id: "n1", 
-                    type: "goodwe", 
-                    name: "test goodwe",
-                    host: "192.168.1.100",
+        { 
+            id: "c10",
+            type: "goodwe-config",
+            host: "192.168.1.100",
+            port: 8899,
+            protocol: "udp",
+            family: "ET"
+        },
+        {
+            id: "n1",
+            type: "goodwe",
+            config: "c10",
                     port: "8899",
                     protocol: "udp",
                     family: "ET",
@@ -369,7 +433,7 @@ describe("Configuration Operations", () => {
                 { id: "n2", type: "helper" }
             ];
 
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 
@@ -392,11 +456,18 @@ describe("Configuration Operations", () => {
 
         it("should set operation mode", (done) => {
             const flow = [
-                { 
-                    id: "n1", 
-                    type: "goodwe", 
-                    name: "test goodwe",
-                    host: "192.168.1.100",
+        { 
+            id: "c9",
+            type: "goodwe-config",
+            host: "192.168.1.100",
+            port: 8899,
+            protocol: "udp",
+            family: "ET"
+        },
+        {
+            id: "n1",
+            type: "goodwe",
+            config: "c9",
                     port: "8899",
                     protocol: "udp",
                     family: "ET",
@@ -405,7 +476,7 @@ describe("Configuration Operations", () => {
                 { id: "n2", type: "helper" }
             ];
 
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 
@@ -435,11 +506,18 @@ describe("Configuration Operations", () => {
 
         it("should validate operation mode value", (done) => {
             const flow = [
-                { 
-                    id: "n1", 
-                    type: "goodwe", 
-                    name: "test goodwe",
-                    host: "192.168.1.100",
+        { 
+            id: "c8",
+            type: "goodwe-config",
+            host: "192.168.1.100",
+            port: 8899,
+            protocol: "udp",
+            family: "ET"
+        },
+        {
+            id: "n1",
+            type: "goodwe",
+            config: "c8",
                     port: "8899",
                     protocol: "udp",
                     family: "ET",
@@ -448,7 +526,7 @@ describe("Configuration Operations", () => {
                 { id: "n2", type: "helper" }
             ];
 
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 
@@ -475,11 +553,18 @@ describe("Configuration Operations", () => {
 
         it("should get battery DoD", (done) => {
             const flow = [
-                { 
-                    id: "n1", 
-                    type: "goodwe", 
-                    name: "test goodwe",
-                    host: "192.168.1.100",
+        { 
+            id: "c7",
+            type: "goodwe-config",
+            host: "192.168.1.100",
+            port: 8899,
+            protocol: "udp",
+            family: "ET"
+        },
+        {
+            id: "n1",
+            type: "goodwe",
+            config: "c7",
                     port: "8899",
                     protocol: "udp",
                     family: "ET",
@@ -488,7 +573,7 @@ describe("Configuration Operations", () => {
                 { id: "n2", type: "helper" }
             ];
 
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 
@@ -513,11 +598,18 @@ describe("Configuration Operations", () => {
 
         it("should set battery DoD", (done) => {
             const flow = [
-                { 
-                    id: "n1", 
-                    type: "goodwe", 
-                    name: "test goodwe",
-                    host: "192.168.1.100",
+        { 
+            id: "c6",
+            type: "goodwe-config",
+            host: "192.168.1.100",
+            port: 8899,
+            protocol: "udp",
+            family: "ET"
+        },
+        {
+            id: "n1",
+            type: "goodwe",
+            config: "c6",
                     port: "8899",
                     protocol: "udp",
                     family: "ET",
@@ -526,7 +618,7 @@ describe("Configuration Operations", () => {
                 { id: "n2", type: "helper" }
             ];
 
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 
@@ -554,11 +646,18 @@ describe("Configuration Operations", () => {
 
         it("should validate battery DoD range", (done) => {
             const flow = [
-                { 
-                    id: "n1", 
-                    type: "goodwe", 
-                    name: "test goodwe",
-                    host: "192.168.1.100",
+        { 
+            id: "c5",
+            type: "goodwe-config",
+            host: "192.168.1.100",
+            port: 8899,
+            protocol: "udp",
+            family: "ET"
+        },
+        {
+            id: "n1",
+            type: "goodwe",
+            config: "c5",
                     port: "8899",
                     protocol: "udp",
                     family: "ET",
@@ -567,7 +666,7 @@ describe("Configuration Operations", () => {
                 { id: "n2", type: "helper" }
             ];
 
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 
@@ -596,11 +695,18 @@ describe("Configuration Operations", () => {
     describe("Error Handling", () => {
         it("should handle write failure gracefully", (done) => {
             const flow = [
-                { 
-                    id: "n1", 
-                    type: "goodwe", 
-                    name: "test goodwe",
-                    host: "192.168.1.100",
+        { 
+            id: "c4",
+            type: "goodwe-config",
+            host: "192.168.1.100",
+            port: 8899,
+            protocol: "udp",
+            family: "ET"
+        },
+        {
+            id: "n1",
+            type: "goodwe",
+            config: "c4",
                     port: "8899",
                     protocol: "udp",
                     family: "ET",
@@ -609,7 +715,7 @@ describe("Configuration Operations", () => {
                 { id: "n2", type: "helper" }
             ];
 
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 
@@ -636,11 +742,18 @@ describe("Configuration Operations", () => {
 
         it("should report validation errors clearly", (done) => {
             const flow = [
-                { 
-                    id: "n1", 
-                    type: "goodwe", 
-                    name: "test goodwe",
-                    host: "192.168.1.100",
+        { 
+            id: "c3",
+            type: "goodwe-config",
+            host: "192.168.1.100",
+            port: 8899,
+            protocol: "udp",
+            family: "ET"
+        },
+        {
+            id: "n1",
+            type: "goodwe",
+            config: "c3",
                     port: "8899",
                     protocol: "udp",
                     family: "ET",
@@ -649,7 +762,7 @@ describe("Configuration Operations", () => {
                 { id: "n2", type: "helper" }
             ];
 
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 
@@ -679,11 +792,18 @@ describe("Configuration Operations", () => {
     describe("Status Reporting", () => {
         it("should update status during config read", (done) => {
             const flow = [
-                { 
-                    id: "n1", 
-                    type: "goodwe", 
-                    name: "test goodwe",
-                    host: "192.168.1.100",
+        { 
+            id: "c2",
+            type: "goodwe-config",
+            host: "192.168.1.100",
+            port: 8899,
+            protocol: "udp",
+            family: "ET"
+        },
+        {
+            id: "n1",
+            type: "goodwe",
+            config: "c2",
                     port: "8899",
                     protocol: "udp",
                     family: "ET",
@@ -692,7 +812,7 @@ describe("Configuration Operations", () => {
                 { id: "n2", type: "helper" }
             ];
 
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 
@@ -713,11 +833,18 @@ describe("Configuration Operations", () => {
 
         it("should update status during config write", (done) => {
             const flow = [
-                { 
-                    id: "n1", 
-                    type: "goodwe", 
-                    name: "test goodwe",
-                    host: "192.168.1.100",
+        { 
+            id: "c1",
+            type: "goodwe-config",
+            host: "192.168.1.100",
+            port: 8899,
+            protocol: "udp",
+            family: "ET"
+        },
+        {
+            id: "n1",
+            type: "goodwe",
+            config: "c1",
                     port: "8899",
                     protocol: "udp",
                     family: "ET",
@@ -726,7 +853,7 @@ describe("Configuration Operations", () => {
                 { id: "n2", type: "helper" }
             ];
 
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 

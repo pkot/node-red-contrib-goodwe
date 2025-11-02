@@ -16,6 +16,8 @@ This project is a Node-RED port of the excellent [marcelblijleven/goodwe](https:
 - 🎯 Support for multiple inverter families (ET, EH, BT, BH, ES, EM, BP, DT, MS, D-NS, XS)
 - ⚡ Asynchronous communication with proper error handling
 - 🎨 User-friendly Node-RED configuration interface
+- 🔧 Shared configuration nodes for managing multiple inverters
+- ♻️ Connection pooling and lifecycle management
 
 ## Installation
 
@@ -42,24 +44,64 @@ npm install node-red-contrib-goodwe
 
 ## Usage
 
-### Basic Configuration
+### Configuration
 
-1. Drag the **goodwe** node from the palette to your flow
-2. Double-click to configure:
-   - **Host**: IP address or hostname of your GoodWe inverter (e.g., `192.168.1.100`)
-   - **Protocol**: Choose UDP (port 8899) or Modbus TCP (port 502)
-   - **Port**: Communication port (default: 8899 for UDP, 502 for Modbus)
-   - **Inverter Family**: Select your inverter series (ET, EH, BT, etc.)
-3. Wire the node to an inject node for triggering reads and a debug node for output
+The GoodWe node requires a configuration node to define connection settings.
 
-### Example Flow
+1. Create a configuration node:
+   - In the Node-RED editor, add a **goodwe** node to your flow
+   - In the node settings, click the pencil icon next to **Configuration** to create a new config node
+   - Configure the connection settings (host, port, protocol, family)
+   - Click **Add** to save the configuration node
+
+2. Reuse the configuration:
+   - Additional **goodwe** nodes can reference the same configuration node
+   - Changes to the config node automatically apply to all nodes using it
+
+**Benefits:**
+- ✅ Eliminates configuration duplication
+- ✅ Single point of truth for connection settings
+- ✅ Easier to manage multiple inverters
+- ✅ Centralized connection lifecycle management
+
+### Configuration Node Settings
+
+The configuration node allows you to configure:
+
+**Basic Settings:**
+- **Name**: Friendly name to identify this configuration
+- **Host**: IP address or hostname of the inverter (required)
+- **Protocol**: UDP or Modbus TCP
+- **Port**: Communication port (8899 for UDP, 502 for Modbus)
+- **Inverter Family**: Your inverter series (ET, EH, BT, etc.)
+
+**Advanced Settings** (click to expand):
+- **Timeout**: Response timeout in milliseconds (default: 1000ms, minimum: 100ms)
+- **Retries**: Number of retry attempts (default: 3, minimum: 0)
+- **Comm Address**: Communication address (auto, 0xF7, or 0x7F)
+- **Keep Alive**: Keep connection alive between requests (default: true)
+
+### Example Flows
+
+#### Example 1: Basic Usage
 
 ```json
 [
     {
+        "id": "config-node",
+        "type": "goodwe-config",
+        "name": "Living Room Inverter",
+        "host": "192.168.1.100",
+        "port": "8899",
+        "protocol": "udp",
+        "family": "ET",
+        "timeout": 1000,
+        "retries": 3
+    },
+    {
         "id": "inject-node",
         "type": "inject",
-        "name": "Read inverter data",
+        "name": "Read every 60s",
         "repeat": "60",
         "payload": "read",
         "wires": [["goodwe-node"]]
@@ -67,11 +109,69 @@ npm install node-red-contrib-goodwe
     {
         "id": "goodwe-node",
         "type": "goodwe",
-        "name": "My GoodWe Inverter",
+        "name": "Read Inverter",
+        "config": "config-node",
+        "wires": [["debug-node"]]
+    },
+    {
+        "id": "debug-node",
+        "type": "debug",
+        "name": "Show Data"
+    }
+]
+```
+
+#### Example 2: Multiple Nodes Sharing Configuration
+
+```json
+[
+    {
+        "id": "config-node",
+        "type": "goodwe-config",
+        "name": "Shared Inverter Config",
         "host": "192.168.1.100",
         "port": "8899",
         "protocol": "udp",
         "family": "ET"
+    },
+    {
+        "id": "inject-read",
+        "type": "inject",
+        "name": "Read Data",
+        "repeat": "60",
+        "payload": "read",
+        "wires": [["goodwe-read"]]
+    },
+    {
+        "id": "goodwe-read",
+        "type": "goodwe",
+        "name": "Read Runtime Data",
+        "config": "config-node",
+        "wires": [["debug-data"]]
+    },
+    {
+        "id": "inject-discover",
+        "type": "inject",
+        "name": "Discover",
+        "payload": "discover",
+        "wires": [["goodwe-discover"]]
+    },
+    {
+        "id": "goodwe-discover",
+        "type": "goodwe",
+        "name": "Discover Inverters",
+        "config": "config-node",
+        "wires": [["debug-discover"]]
+    },
+    {
+        "id": "debug-data",
+        "type": "debug",
+        "name": "Runtime Data"
+    },
+    {
+        "id": "debug-discover",
+        "type": "debug",
+        "name": "Discovery Results"
     }
 ]
 ```
@@ -140,12 +240,20 @@ See the **[Testing Guide](./docs/TESTING.md)** for comprehensive testing documen
 ```
 node-red-contrib-goodwe/
 ├── nodes/              # Node implementation
-│   ├── goodwe.js      # Node runtime logic
-│   ├── goodwe.html    # Node UI and help
+│   ├── goodwe.js      # Main node runtime logic
+│   ├── goodwe.html    # Main node UI and help
+│   ├── config.js      # Configuration node logic
+│   ├── config.html    # Configuration node UI and help
 │   └── icons/         # Node icons
+├── lib/               # Shared libraries
+│   └── protocol.js    # Protocol handlers
 ├── test/              # Test files
-│   └── goodwe.test.js
+│   ├── goodwe.test.js
+│   ├── config-node.test.js
+│   ├── config-integration.test.js
+│   └── ...
 ├── examples/          # Example flows
+├── docs/              # Documentation
 ├── .github/           # CI/CD workflows
 ├── package.json
 ├── jest.config.js
