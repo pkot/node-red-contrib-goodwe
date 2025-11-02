@@ -626,5 +626,5 @@ module.exports = function(RED) {
     }
 
     // Register the node
-    RED.nodes.registerType("goodwe", GoodWeNode);
+    RED.nodes.registerType("goodwe-legacy", GoodWeNode);
 };

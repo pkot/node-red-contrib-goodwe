@@ -6,7 +6,7 @@
  */
 
 const helper = require("node-red-node-test-helper");
-const goodweNode = require("../nodes/goodwe.js");
+const goodweNode = require("../nodes/goodwe-legacy.js");
 const testUtils = require("./test-utils");
 const mockData = require("./fixtures/mock-inverter-data");
 

@@ -9,7 +9,7 @@
  */
 
 const helper = require("node-red-node-test-helper");
-const goodweNode = require("../nodes/goodwe.js");
+const goodweNode = require("../nodes/goodwe-legacy.js");
 const mockData = require("./fixtures/mock-inverter-data.js");
 const testUtils = require("./test-utils.js");
 
@@ -374,7 +374,7 @@ describe("Runtime Data Retrieval", function () {
             const flow = [
                 {
                     id: "n1",
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     name: "test goodwe",
                     host: "invalid", // Invalid host to trigger error
                     port: 8899,
@@ -409,7 +409,7 @@ describe("Runtime Data Retrieval", function () {
             const flow = [
                 {
                     id: "n1",
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     name: "test goodwe",
                     host: "", // Empty host to trigger error
                     port: 8899,
@@ -444,7 +444,7 @@ describe("Runtime Data Retrieval", function () {
             const flow = [
                 {
                     id: "n1",
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     name: "test goodwe",
                     host: "",
                     port: 8899,

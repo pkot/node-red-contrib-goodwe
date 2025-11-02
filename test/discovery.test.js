@@ -6,7 +6,7 @@
  */
 
 const helper = require("node-red-node-test-helper");
-const goodweNode = require("../nodes/goodwe.js");
+const goodweNode = require("../nodes/goodwe-legacy.js");
 const { discoverInverters } = require("../lib/protocol.js");
 
 helper.init(require.resolve("node-red"));
@@ -27,7 +27,7 @@ describe("goodwe discovery", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     name: "test discover",
                     wires: [["n2"]]
                 },
@@ -71,7 +71,7 @@ describe("goodwe discovery", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     name: "test discover",
                     wires: [["n2"]]
                 },
@@ -100,7 +100,7 @@ describe("goodwe discovery", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     wires: [["n2"]]
                 },
                 { id: "n2", type: "helper" }
@@ -130,7 +130,7 @@ describe("goodwe discovery", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     wires: [["n2"]]
                 },
                 { id: "n2", type: "helper" }
@@ -163,7 +163,7 @@ describe("goodwe discovery", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     wires: [["n2"]]
                 },
                 { id: "n2", type: "helper" }
@@ -193,7 +193,7 @@ describe("goodwe discovery", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     wires: [["n2"]]
                 },
                 { id: "n2", type: "helper" }
@@ -226,7 +226,7 @@ describe("goodwe discovery", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     wires: [["n2"]]
                 },
                 { id: "n2", type: "helper" }

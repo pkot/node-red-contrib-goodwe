@@ -1,0 +1,135 @@
+<!-- GoodWe Write Node Configuration -->
+<script type="text/javascript">
+    RED.nodes.registerType('goodwe-write', {
+        category: 'GoodWe',
+        color: '#FFA500',
+        defaults: {
+            name: { value: "" },
+            config: { value: "", type: "goodwe-config", required: true },
+            confirm: { value: false }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "bridge.png",
+        label: function() {
+            return this.name || "write";
+        },
+        labelStyle: function() {
+            return this.name ? "node_label_italic" : "";
+        }
+    });
+</script>
+
+<!-- Node Configuration Template -->
+<script type="text/html" data-template-name="goodwe-write">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    
+    <div class="form-row">
+        <label for="node-input-config"><i class="fa fa-cog"></i> Config</label>
+        <input type="text" id="node-input-config" placeholder="Select configuration">
+    </div>
+    
+    <div class="form-row" style="background-color: #fff3cd; padding: 10px; border-left: 4px solid #ff9800;">
+        <p style="margin: 0; color: #856404;">
+            <i class="fa fa-exclamation-triangle"></i> <strong>WARNING:</strong> 
+            Writing settings can damage your inverter or void warranty. Use with extreme caution!
+        </p>
+    </div>
+    
+    <div class="form-row">
+        <label for="node-input-confirm"><i class="fa fa-check-square"></i> Require Confirmation</label>
+        <input type="checkbox" id="node-input-confirm" style="display:inline-block; width:auto; vertical-align:top;">
+        <label for="node-input-confirm" style="width:70%;">Require explicit confirmation in payload</label>
+    </div>
+</script>
+
+<!-- Node Help Text -->
+<script type="text/html" data-help-name="goodwe-write">
+    <p>Node for writing configuration settings to GoodWe inverters.</p>
+    
+    <p style="background-color: #f8d7da; padding: 10px; border-left: 4px solid #dc3545; color: #721c24;">
+        <strong><i class="fa fa-exclamation-triangle"></i> CRITICAL WARNING:</strong> 
+        Writing settings modifies installer-level parameters. Incorrect values may damage equipment, 
+        create unsafe conditions, void your warranty, or violate local regulations.
+    </p>
+    
+    <h3>Configuration</h3>
+    <dl class="message-properties">
+        <dt>Config <span class="property-type">goodwe-config</span></dt>
+        <dd>Reference to GoodWe configuration node</dd>
+        
+        <dt>Require Confirmation <span class="property-type">boolean</span></dt>
+        <dd>If enabled, payload must include <code>confirm: true</code></dd>
+    </dl>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>payload <span class="property-type">object</span></dt>
+        <dd>Object containing <code>setting_id</code> and <code>value</code></dd>
+    </dl>
+
+    <h4>Input Examples</h4>
+    <p>Write a setting:</p>
+    <pre>msg.payload = {
+  setting_id: "grid_export_limit",
+  value: 5000
+}</pre>
+    
+    <p>Write with confirmation (if required by node config):</p>
+    <pre>msg.payload = {
+  setting_id: "grid_export_limit",
+  value: 5000,
+  confirm: true
+}</pre>
+
+    <h3>Outputs</h3>
+    <dl class="message-properties">
+        <dt>payload <span class="property-type">object</span></dt>
+        <dd>Write result with success status</dd>
+        
+        <dt>topic <span class="property-type">string</span></dt>
+        <dd>Set to "goodwe/write_confirm" on success or "goodwe/error" on failure</dd>
+        
+        <dt>_timestamp <span class="property-type">string</span></dt>
+        <dd>ISO timestamp of the write operation</dd>
+    </dl>
+
+    <h4>Success Response</h4>
+    <pre>{
+  payload: {
+    success: true,
+    setting_id: "grid_export_limit",
+    value: 5000,
+    previous_value: 4000
+  }
+}</pre>
+
+    <h4>Error Response</h4>
+    <pre>{
+  payload: {
+    success: false,
+    error: {
+      code: "VALIDATION_ERROR",
+      message: "Value out of range: 15000. Valid range: 0-10000W"
+    }
+  }
+}</pre>
+
+    <h3>Safety Guidelines</h3>
+    <ul>
+        <li><strong>Backup current settings</strong> - Read and save settings before changes</li>
+        <li><strong>Validate values</strong> - Ensure values are within safe ranges</li>
+        <li><strong>Document changes</strong> - Keep a record of modifications</li>
+        <li><strong>Consult documentation</strong> - Review manual and local regulations</li>
+        <li><strong>Professional help</strong> - Contact installer for complex changes</li>
+        <li><strong>Test carefully</strong> - Monitor inverter behavior after changes</li>
+    </ul>
+
+    <h3>Details</h3>
+    <p>This node writes configuration settings to GoodWe inverters. It provides validation 
+    to prevent obviously incorrect values, but you are responsible for ensuring settings 
+    are appropriate for your specific installation.</p>
+</script>

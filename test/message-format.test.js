@@ -6,7 +6,7 @@
  */
 
 const helper = require("node-red-node-test-helper");
-const goodweNode = require("../nodes/goodwe.js");
+const goodweNode = require("../nodes/goodwe-legacy.js");
 
 helper.init(require.resolve("node-red"));
 
@@ -26,7 +26,7 @@ describe("goodwe message format", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     host: "192.168.1.100",
                     wires: [["n2"]]
                 },
@@ -58,7 +58,7 @@ describe("goodwe message format", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     host: "192.168.1.100",
                     wires: [["n2"]]
                 },
@@ -88,7 +88,7 @@ describe("goodwe message format", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     host: "192.168.1.100",
                     wires: [["n2"]]
                 },
@@ -118,7 +118,7 @@ describe("goodwe message format", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     host: "192.168.1.100",
                     wires: [["n2"]]
                 },
@@ -147,7 +147,7 @@ describe("goodwe message format", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     host: "192.168.1.100",
                     wires: [["n2"]]
                 },
@@ -180,7 +180,7 @@ describe("goodwe message format", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     host: "192.168.1.100",
                     wires: [["n2"]]
                 },
@@ -216,7 +216,7 @@ describe("goodwe message format", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     host: "192.168.1.100",
                     wires: [["n2"]]
                 },
@@ -245,7 +245,7 @@ describe("goodwe message format", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     host: "192.168.1.100",
                     wires: [["n2"]]
                 },
@@ -273,7 +273,7 @@ describe("goodwe message format", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     host: "192.168.1.100",
                     wires: [["n2"]]
                 },
@@ -305,7 +305,7 @@ describe("goodwe message format", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     host: "192.168.1.100",
                     wires: [["n2"]]
                 },
@@ -334,7 +334,7 @@ describe("goodwe message format", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     host: "192.168.1.100",
                     wires: [["n2"]]
                 },
@@ -370,7 +370,7 @@ describe("goodwe message format", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     host: "192.168.1.100",
                     wires: [["n2"]]
                 },
@@ -402,7 +402,7 @@ describe("goodwe message format", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     host: "192.168.1.100",
                     wires: [["n2"]]
                 },
@@ -430,7 +430,7 @@ describe("goodwe message format", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     host: "192.168.1.100",
                     wires: [["n2"]]
                 },

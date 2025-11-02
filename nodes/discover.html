@@ -1,0 +1,101 @@
+<!-- GoodWe Discover Node Configuration -->
+<script type="text/javascript">
+    RED.nodes.registerType('goodwe-discover', {
+        category: 'GoodWe',
+        color: '#3FADB5',
+        defaults: {
+            name: { value: "" },
+            timeout: { value: 5000, validate: RED.validators.number() }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "bridge.png",
+        label: function() {
+            return this.name || "discover";
+        },
+        labelStyle: function() {
+            return this.name ? "node_label_italic" : "";
+        }
+    });
+</script>
+
+<!-- Node Configuration Template -->
+<script type="text/html" data-template-name="goodwe-discover">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    
+    <div class="form-row">
+        <label for="node-input-timeout"><i class="fa fa-clock-o"></i> Timeout (ms)</label>
+        <input type="number" id="node-input-timeout" placeholder="5000">
+    </div>
+</script>
+
+<!-- Node Help Text -->
+<script type="text/html" data-help-name="goodwe-discover">
+    <p>Node for discovering GoodWe inverters on the local network.</p>
+    
+    <h3>Configuration</h3>
+    <dl class="message-properties">
+        <dt>Timeout <span class="property-type">number</span></dt>
+        <dd>Discovery timeout in milliseconds (default: 5000)</dd>
+    </dl>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>payload <span class="property-type">any</span></dt>
+        <dd>Any message triggers discovery. Can optionally include <code>timeout</code> to override default.</dd>
+    </dl>
+
+    <h4>Input Examples</h4>
+    <p>Simple trigger:</p>
+    <pre>msg.payload = true</pre>
+    
+    <p>With custom timeout:</p>
+    <pre>msg.payload = { timeout: 10000 }</pre>
+
+    <h3>Outputs</h3>
+    <dl class="message-properties">
+        <dt>payload <span class="property-type">object</span></dt>
+        <dd>Discovery results with devices array and count</dd>
+        
+        <dt>topic <span class="property-type">string</span></dt>
+        <dd>Set to "goodwe/discover" (or preserved from input)</dd>
+        
+        <dt>_timestamp <span class="property-type">string</span></dt>
+        <dd>ISO timestamp of the discovery operation</dd>
+    </dl>
+
+    <h4>Output Example</h4>
+    <pre>{
+  payload: {
+    devices: [
+      {
+        host: "192.168.1.100",
+        model: "GW5000-EH",
+        serial: "ETxxxxxxxx",
+        family: "ET",
+        port: 8899,
+        protocol: "udp"
+      }
+    ],
+    count: 1
+  }
+}</pre>
+
+    <h4>No Devices Found</h4>
+    <pre>{
+  payload: {
+    devices: [],
+    count: 0
+  }
+}</pre>
+
+    <h3>Details</h3>
+    <p>This node scans the local network for GoodWe inverters using UDP broadcast discovery. 
+    Discovery takes a few seconds, so be patient. The timeout can be increased for larger networks.</p>
+    
+    <p>Discovered devices include connection details (host, port, protocol) that can be used 
+    to configure a GoodWe config node.</p>
+</script>

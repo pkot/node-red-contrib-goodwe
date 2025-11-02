@@ -6,7 +6,7 @@
  */
 
 const helper = require("node-red-node-test-helper");
-const goodweNode = require("../nodes/goodwe.js");
+const goodweNode = require("../nodes/goodwe-legacy.js");
 
 helper.init(require.resolve("node-red"));
 
@@ -26,7 +26,7 @@ describe("goodwe node configuration", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe", 
+                    type: "goodwe-legacy", 
                     name: "test"
                 }
             ];
@@ -52,7 +52,7 @@ describe("goodwe node configuration", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     host: "192.168.1.100"
                 }
             ];
@@ -72,7 +72,7 @@ describe("goodwe node configuration", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     host: "inverter.local"
                 }
             ];
@@ -92,7 +92,7 @@ describe("goodwe node configuration", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     host: "goodwe.home.arpa"
                 }
             ];
@@ -114,7 +114,7 @@ describe("goodwe node configuration", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     host: "192.168.1.100",
                     port: 8899
                 }
@@ -135,7 +135,7 @@ describe("goodwe node configuration", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     host: "192.168.1.100",
                     port: 502
                 }
@@ -158,7 +158,7 @@ describe("goodwe node configuration", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     host: "192.168.1.100",
                     protocol: "udp"
                 }
@@ -179,7 +179,7 @@ describe("goodwe node configuration", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     host: "192.168.1.100",
                     protocol: "modbus"
                 }
@@ -205,7 +205,7 @@ describe("goodwe node configuration", () => {
                 const flow = [
                     { 
                         id: "n1", 
-                        type: "goodwe",
+                        type: "goodwe-legacy",
                         host: "192.168.1.100",
                         family: family
                     }
@@ -229,7 +229,7 @@ describe("goodwe node configuration", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     name: "Living Room Inverter",
                     host: "192.168.1.100",
                     port: 8899,

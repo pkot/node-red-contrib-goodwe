@@ -1,7 +1,7 @@
-<!-- GoodWe Node Configuration -->
+<!-- GoodWe Legacy Node Configuration -->
 <script type="text/javascript">
-    RED.nodes.registerType('goodwe', {
-        category: 'advanced',
+    RED.nodes.registerType('goodwe-legacy', {
+        category: 'GoodWe',
         color: '#3FADB5',
         defaults: {
             name: { value: "" },
@@ -14,7 +14,7 @@
         outputs: 1,
         icon: "bridge.png",
         label: function() {
-            return this.name || "GoodWe " + (this.host || "inverter");
+            return this.name || "GoodWe Legacy " + (this.host || "inverter");
         },
         labelStyle: function() {
             return this.name ? "node_label_italic" : "";
@@ -34,7 +34,7 @@
 </script>
 
 <!-- Node Configuration Template -->
-<script type="text/html" data-template-name="goodwe">
+<script type="text/html" data-template-name="goodwe-legacy">
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
@@ -73,7 +73,9 @@
 </script>
 
 <!-- Node Help Text -->
-<script type="text/html" data-help-name="goodwe">
+<script type="text/html" data-help-name="goodwe-legacy">
+    <p><strong>DEPRECATED:</strong> This is the legacy unified GoodWe node. Please use the specialized nodes instead (read, write, discover, info with goodwe-config).</p>
+    
     <p>A Node-RED node for connecting to GoodWe inverters and retrieving sensor data.</p>
     
     <h3>Configuration</h3>

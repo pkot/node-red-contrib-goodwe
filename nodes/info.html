@@ -1,0 +1,82 @@
+<!-- GoodWe Info Node Configuration -->
+<script type="text/javascript">
+    RED.nodes.registerType('goodwe-info', {
+        category: 'GoodWe',
+        color: '#3FADB5',
+        defaults: {
+            name: { value: "" },
+            config: { value: "", type: "goodwe-config", required: true }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "bridge.png",
+        label: function() {
+            return this.name || "info";
+        },
+        labelStyle: function() {
+            return this.name ? "node_label_italic" : "";
+        }
+    });
+</script>
+
+<!-- Node Configuration Template -->
+<script type="text/html" data-template-name="goodwe-info">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    
+    <div class="form-row">
+        <label for="node-input-config"><i class="fa fa-cog"></i> Config</label>
+        <input type="text" id="node-input-config" placeholder="Select configuration">
+    </div>
+</script>
+
+<!-- Node Help Text -->
+<script type="text/html" data-help-name="goodwe-info">
+    <p>Node for getting device information from GoodWe inverters.</p>
+    
+    <h3>Configuration</h3>
+    <dl class="message-properties">
+        <dt>Config <span class="property-type">goodwe-config</span></dt>
+        <dd>Reference to GoodWe configuration node</dd>
+    </dl>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>payload <span class="property-type">any</span></dt>
+        <dd>Any message triggers device info retrieval</dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <dl class="message-properties">
+        <dt>payload <span class="property-type">object</span></dt>
+        <dd>Device information</dd>
+        
+        <dt>topic <span class="property-type">string</span></dt>
+        <dd>Set to "goodwe/device_info" (or preserved from input)</dd>
+        
+        <dt>_timestamp <span class="property-type">string</span></dt>
+        <dd>ISO timestamp of the info retrieval</dd>
+    </dl>
+
+    <h4>Output Example</h4>
+    <pre>{
+  payload: {
+    model_name: "GW5000-EH",
+    serial_number: "ETxxxxxxxx",
+    rated_power: 5000,
+    firmware: "V1.2.3",
+    arm_firmware: "V2.0.1",
+    modbus_version: 2,
+    family: "ET"
+  }
+}</pre>
+
+    <h3>Details</h3>
+    <p>This node retrieves device information from GoodWe inverters including model name, 
+    serial number, firmware version, and other device-specific details.</p>
+    
+    <p>This information is useful for diagnostics, logging, and identifying the specific 
+    inverter model for configuration purposes.</p>
+</script>

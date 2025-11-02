@@ -26,7 +26,7 @@ function createBasicFlow(config = {}) {
     return [
         {
             id: nodeId,
-            type: "goodwe",
+            type: "goodwe-legacy",
             name: config.name || "test goodwe",
             host: config.host || "192.168.1.100",
             port: config.port || 8899,
@@ -53,7 +53,7 @@ function createMultiNodeFlow(configs) {
         
         flow.push({
             id: nodeId,
-            type: "goodwe",
+            type: "goodwe-legacy",
             name: config.name || `test goodwe ${index + 1}`,
             host: config.host || `192.168.1.${100 + index}`,
             port: config.port || 8899,

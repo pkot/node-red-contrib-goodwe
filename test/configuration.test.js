@@ -6,7 +6,7 @@
  */
 
 const helper = require("node-red-node-test-helper");
-const goodweNode = require("../nodes/goodwe.js");
+const goodweNode = require("../nodes/goodwe-legacy.js");
 const mockInverterData = require("./fixtures/mock-inverter-data.js");
 
 helper.init(require.resolve("node-red"));
@@ -27,7 +27,7 @@ describe("Configuration Operations", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe", 
+                    type: "goodwe-legacy", 
                     name: "test goodwe",
                     host: "192.168.1.100",
                     port: "8899",
@@ -69,7 +69,7 @@ describe("Configuration Operations", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe", 
+                    type: "goodwe-legacy", 
                     name: "test goodwe",
                     host: "192.168.1.100",
                     port: "8899",
@@ -111,7 +111,7 @@ describe("Configuration Operations", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe", 
+                    type: "goodwe-legacy", 
                     name: "test goodwe",
                     host: "192.168.1.100",
                     port: "8899",
@@ -153,7 +153,7 @@ describe("Configuration Operations", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe", 
+                    type: "goodwe-legacy", 
                     name: "test goodwe",
                     host: "192.168.1.100",
                     port: "8899",
@@ -196,7 +196,7 @@ describe("Configuration Operations", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe", 
+                    type: "goodwe-legacy", 
                     name: "test goodwe",
                     host: "192.168.1.100",
                     port: "8899",
@@ -237,7 +237,7 @@ describe("Configuration Operations", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe", 
+                    type: "goodwe-legacy", 
                     name: "test goodwe",
                     host: "192.168.1.100",
                     port: "8899",
@@ -280,7 +280,7 @@ describe("Configuration Operations", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe", 
+                    type: "goodwe-legacy", 
                     name: "test goodwe",
                     host: "192.168.1.100",
                     port: "8899",
@@ -317,7 +317,7 @@ describe("Configuration Operations", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe", 
+                    type: "goodwe-legacy", 
                     name: "test goodwe",
                     host: "192.168.1.100",
                     port: "8899",
@@ -358,7 +358,7 @@ describe("Configuration Operations", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe", 
+                    type: "goodwe-legacy", 
                     name: "test goodwe",
                     host: "192.168.1.100",
                     port: "8899",
@@ -394,7 +394,7 @@ describe("Configuration Operations", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe", 
+                    type: "goodwe-legacy", 
                     name: "test goodwe",
                     host: "192.168.1.100",
                     port: "8899",
@@ -437,7 +437,7 @@ describe("Configuration Operations", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe", 
+                    type: "goodwe-legacy", 
                     name: "test goodwe",
                     host: "192.168.1.100",
                     port: "8899",
@@ -477,7 +477,7 @@ describe("Configuration Operations", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe", 
+                    type: "goodwe-legacy", 
                     name: "test goodwe",
                     host: "192.168.1.100",
                     port: "8899",
@@ -515,7 +515,7 @@ describe("Configuration Operations", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe", 
+                    type: "goodwe-legacy", 
                     name: "test goodwe",
                     host: "192.168.1.100",
                     port: "8899",
@@ -556,7 +556,7 @@ describe("Configuration Operations", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe", 
+                    type: "goodwe-legacy", 
                     name: "test goodwe",
                     host: "192.168.1.100",
                     port: "8899",
@@ -598,7 +598,7 @@ describe("Configuration Operations", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe", 
+                    type: "goodwe-legacy", 
                     name: "test goodwe",
                     host: "192.168.1.100",
                     port: "8899",
@@ -638,7 +638,7 @@ describe("Configuration Operations", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe", 
+                    type: "goodwe-legacy", 
                     name: "test goodwe",
                     host: "192.168.1.100",
                     port: "8899",
@@ -681,7 +681,7 @@ describe("Configuration Operations", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe", 
+                    type: "goodwe-legacy", 
                     name: "test goodwe",
                     host: "192.168.1.100",
                     port: "8899",
@@ -715,7 +715,7 @@ describe("Configuration Operations", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe", 
+                    type: "goodwe-legacy", 
                     name: "test goodwe",
                     host: "192.168.1.100",
                     port: "8899",

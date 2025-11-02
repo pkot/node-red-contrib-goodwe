@@ -6,7 +6,7 @@
  */
 
 const helper = require("node-red-node-test-helper");
-const goodweNode = require("../nodes/goodwe.js");
+const goodweNode = require("../nodes/goodwe-legacy.js");
 
 helper.init(require.resolve("node-red"));
 
@@ -26,7 +26,7 @@ describe("goodwe status reporting", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     host: "192.168.1.100"
                 }
             ];
@@ -49,7 +49,7 @@ describe("goodwe status reporting", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     host: "192.168.1.100",
                     wires: [["n2"]]
                 },
@@ -75,7 +75,7 @@ describe("goodwe status reporting", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     host: "192.168.1.100"
                 }
             ];
@@ -91,7 +91,7 @@ describe("goodwe status reporting", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     host: "192.168.1.100",
                     wires: [["n2"]]
                 },
@@ -114,7 +114,7 @@ describe("goodwe status reporting", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     host: "192.168.1.100",
                     wires: [["n2"]]
                 },
@@ -137,7 +137,7 @@ describe("goodwe status reporting", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     host: "192.168.1.100",
                     wires: [["n2"]]
                 },
@@ -168,7 +168,7 @@ describe("goodwe status reporting", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     host: "192.168.1.100"
                 }
             ];
@@ -196,7 +196,7 @@ describe("goodwe status reporting", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     host: "192.168.1.100"
                 }
             ];
@@ -218,7 +218,7 @@ describe("goodwe status reporting", () => {
             const flow = [
                 { 
                     id: "n1", 
-                    type: "goodwe",
+                    type: "goodwe-legacy",
                     host: "192.168.1.100",
                     wires: [["n2"]]
                 },

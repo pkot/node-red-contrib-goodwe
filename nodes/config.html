@@ -1,0 +1,131 @@
+<!-- GoodWe Config Node Configuration -->
+<script type="text/javascript">
+    RED.nodes.registerType('goodwe-config', {
+        category: 'config',
+        defaults: {
+            name: { value: "" },
+            host: { value: "", required: true, validate: RED.validators.regex(/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|^[a-zA-Z0-9.-]+$/) },
+            port: { value: 8899, required: true, validate: RED.validators.number() },
+            protocol: { value: "udp" },
+            family: { value: "ET" },
+            timeout: { value: 1000, validate: RED.validators.number() },
+            retries: { value: 3, validate: RED.validators.number() },
+            commAddr: { value: "auto" },
+            keepAlive: { value: true }
+        },
+        label: function() {
+            return this.name || this.host || "goodwe config";
+        },
+        oneditprepare: function() {
+            // Update port based on protocol selection
+            $("#node-config-input-protocol").change(function() {
+                const protocol = $(this).val();
+                if (protocol === "udp") {
+                    $("#node-config-input-port").val(8899);
+                } else if (protocol === "modbus") {
+                    $("#node-config-input-port").val(502);
+                }
+            });
+        }
+    });
+</script>
+
+<!-- Node Configuration Template -->
+<script type="text/html" data-template-name="goodwe-config">
+    <div class="form-row">
+        <label for="node-config-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-config-input-name" placeholder="My GoodWe Inverter">
+    </div>
+    
+    <div class="form-row">
+        <label for="node-config-input-host"><i class="fa fa-server"></i> Host</label>
+        <input type="text" id="node-config-input-host" placeholder="192.168.1.100 or inverter.local">
+    </div>
+    
+    <div class="form-row">
+        <label for="node-config-input-protocol"><i class="fa fa-exchange"></i> Protocol</label>
+        <select id="node-config-input-protocol">
+            <option value="udp">UDP (port 8899)</option>
+            <option value="modbus">Modbus TCP (port 502)</option>
+        </select>
+    </div>
+    
+    <div class="form-row">
+        <label for="node-config-input-port"><i class="fa fa-plug"></i> Port</label>
+        <input type="number" id="node-config-input-port" placeholder="8899">
+    </div>
+    
+    <div class="form-row">
+        <label for="node-config-input-family"><i class="fa fa-microchip"></i> Inverter Family</label>
+        <select id="node-config-input-family">
+            <option value="ET">ET Series (ET, EH, BT, BH)</option>
+            <option value="ES">ES Series (ES, EM, BP)</option>
+            <option value="DT">DT Series (DT, MS, D-NS, XS)</option>
+        </select>
+    </div>
+    
+    <div class="form-row">
+        <label for="node-config-input-timeout"><i class="fa fa-clock-o"></i> Timeout (ms)</label>
+        <input type="number" id="node-config-input-timeout" placeholder="1000">
+    </div>
+    
+    <div class="form-row">
+        <label for="node-config-input-retries"><i class="fa fa-refresh"></i> Retries</label>
+        <input type="number" id="node-config-input-retries" placeholder="3">
+    </div>
+    
+    <div class="form-row">
+        <label for="node-config-input-commAddr"><i class="fa fa-hashtag"></i> Comm Address</label>
+        <select id="node-config-input-commAddr">
+            <option value="auto">Auto (detect)</option>
+            <option value="0xF7">0xF7</option>
+            <option value="0x7F">0x7F</option>
+        </select>
+    </div>
+    
+    <div class="form-row">
+        <label for="node-config-input-keepAlive"><i class="fa fa-link"></i> Keep Alive</label>
+        <input type="checkbox" id="node-config-input-keepAlive" style="display:inline-block; width:auto; vertical-align:top;">
+        <label for="node-config-input-keepAlive" style="width:70%;">Keep connection alive between requests</label>
+    </div>
+</script>
+
+<!-- Node Help Text -->
+<script type="text/html" data-help-name="goodwe-config">
+    <p>Configuration node for GoodWe inverter connection settings.</p>
+    
+    <h3>Configuration</h3>
+    <dl class="message-properties">
+        <dt>Name <span class="property-type">string</span></dt>
+        <dd>Optional name for this configuration</dd>
+        
+        <dt>Host <span class="property-type">string</span></dt>
+        <dd>IP address or hostname of the GoodWe inverter</dd>
+        
+        <dt>Protocol <span class="property-type">string</span></dt>
+        <dd>Communication protocol: UDP (port 8899) or Modbus TCP (port 502)</dd>
+        
+        <dt>Port <span class="property-type">number</span></dt>
+        <dd>Communication port (default: 8899 for UDP, 502 for Modbus)</dd>
+        
+        <dt>Inverter Family <span class="property-type">string</span></dt>
+        <dd>The series/family of your GoodWe inverter (ET, ES, or DT)</dd>
+        
+        <dt>Timeout <span class="property-type">number</span></dt>
+        <dd>Response timeout in milliseconds (default: 1000)</dd>
+        
+        <dt>Retries <span class="property-type">number</span></dt>
+        <dd>Number of retry attempts for failed requests (default: 3)</dd>
+        
+        <dt>Comm Address <span class="property-type">string</span></dt>
+        <dd>Communication address (auto-detected by default)</dd>
+        
+        <dt>Keep Alive <span class="property-type">boolean</span></dt>
+        <dd>Keep connection alive between requests (default: true)</dd>
+    </dl>
+
+    <h3>Details</h3>
+    <p>This configuration node stores shared connection settings used by all GoodWe operational nodes (read, write, discover, info).</p>
+    
+    <p>Multiple operational nodes can reference the same configuration node to share a connection to the inverter.</p>
+</script>
