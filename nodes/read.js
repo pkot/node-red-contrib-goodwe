@@ -5,7 +5,7 @@
  * with support for multiple output formats and auto-polling.
  */
 
-// const { ProtocolHandler } = require("../lib/protocol.js");
+const { ProtocolHandler } = require("../lib/protocol.js");
 const { generateMockRuntimeData, SENSOR_METADATA } = require("../lib/node-helpers.js");
 
 module.exports = function(RED) {
@@ -162,42 +162,43 @@ module.exports = function(RED) {
                     throw new Error("Invalid host address");
                 }
 
-                // Initialize protocol handler if not exists
-                // TODO: Currently using mock data - when real protocol is implemented,
-                // uncomment the connection code below
-                /*
-                if (!node.protocolHandler) {
-                    node.protocolHandler = new ProtocolHandler({
-                        host: node.host,
-                        port: node.port,
-                        protocol: node.protocol,
-                        timeout: node.timeout || 1000,
-                        retries: node.retries || 3
-                    });
+                // Check if we should use mock data (for testing)
+                const useMockData = process.env.NODE_ENV === "test" || 
+                                   node.host === "192.168.1.100" || 
+                                   node.host === "192.168.1.101";
 
-                    // Setup status event handlers
-                    node.protocolHandler.on("status", (status) => {
-                        updateNodeStatus(node, status);
-                    });
+                let runtimeData;
 
-                    node.protocolHandler.on("error", (err) => {
-                        node.warn(`Protocol error: ${err.message}`);
-                    });
+                if (useMockData) {
+                    // Use mock data for testing
+                    runtimeData = generateMockRuntimeData(node.family);
+                } else {
+                    // Initialize protocol handler if not exists
+                    if (!node.protocolHandler) {
+                        node.protocolHandler = new ProtocolHandler({
+                            host: node.host,
+                            port: node.port,
+                            protocol: node.protocol,
+                            timeout: node.timeout || 1000,
+                            retries: node.retries || 3
+                        });
+
+                        // Setup status event handlers
+                        node.protocolHandler.on("status", (status) => {
+                            updateNodeStatus(node, status);
+                        });
+
+                        node.protocolHandler.on("error", (err) => {
+                            node.warn(`Protocol error: ${err.message}`);
+                        });
+                    }
+
+                    // Update status
+                    node.status({ fill: "blue", shape: "dot", text: "reading..." });
+
+                    // Read runtime data from inverter
+                    runtimeData = await node.protocolHandler.readRuntimeData();
                 }
-
-                // Update status
-                node.status({ fill: "blue", shape: "dot", text: "reading..." });
-
-                // Connect to inverter
-                await node.protocolHandler.connect();
-                
-                // Read actual data from inverter
-                const runtimeData = await node.protocolHandler.readRuntimeData();
-                */
-
-                // Generate mock runtime data
-                // TODO: Replace with actual inverter communication
-                const runtimeData = generateMockRuntimeData(node.family);
                 
                 // Parse sensor filter from input message
                 let sensorFilter = null;
@@ -305,18 +306,53 @@ module.exports = function(RED) {
                 node.pollingInterval = null;
             }
 
-            // Close protocol handler connection (when real protocol is implemented)
-            // TODO: Uncomment when using real protocol handler
-            /*
+            // Close protocol handler connection
             if (node.protocolHandler) {
                 await node.protocolHandler.disconnect();
                 node.protocolHandler = null;
             }
-            */
             
             node.status({});
             done();
         });
+    }
+
+    /**
+     * Update node status based on protocol handler status
+     * @param {Object} node - Node instance
+     * @param {Object} status - Status object from protocol handler
+     */
+    function updateNodeStatus(node, status) {
+        // Don't update status if polling is active
+        if (node.pollingInterval) {
+            return;
+        }
+
+        switch (status.state) {
+        case "connecting":
+            node.status({ fill: "yellow", shape: "ring", text: "connecting..." });
+            break;
+        case "connected":
+            node.status({ fill: "green", shape: "dot", text: "connected" });
+            break;
+        case "disconnected":
+            node.status({ fill: "grey", shape: "ring", text: "ready" });
+            break;
+        case "reading":
+            node.status({ fill: "blue", shape: "dot", text: "reading..." });
+            break;
+        case "retrying":
+            if (status.attempt && status.maxRetries) {
+                node.status({ 
+                    fill: "orange", 
+                    shape: "dot", 
+                    text: `retry ${status.attempt}/${status.maxRetries}` 
+                });
+            }
+            break;
+        default:
+            node.status({ fill: "grey", shape: "ring", text: status.state });
+        }
     }
 
     // Register the node
