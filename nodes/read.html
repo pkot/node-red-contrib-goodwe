@@ -1,0 +1,188 @@
+<!-- GoodWe Read Node Configuration -->
+<script type="text/javascript">
+    RED.nodes.registerType('goodwe-read', {
+        category: 'GoodWe',
+        color: '#3FADB5',
+        defaults: {
+            name: { value: "" },
+            config: { value: "", type: "goodwe-config", required: true },
+            outputFormat: { value: "flat" },
+            polling: { value: 0, validate: RED.validators.number() }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "bridge.png",
+        label: function() {
+            if (this.name) {
+                return this.name;
+            }
+            // Show config name and format
+            if (this.config) {
+                const configNode = RED.nodes.node(this.config);
+                let label = "Read";
+                if (configNode && configNode.name) {
+                    label += " " + configNode.name;
+                }
+                if (this.outputFormat && this.outputFormat !== "flat") {
+                    label += " (" + this.outputFormat + ")";
+                }
+                return label;
+            }
+            return "Read";
+        },
+        labelStyle: function() {
+            return this.name ? "node_label_italic" : "";
+        },
+        oneditprepare: function() {
+            // Initialize output format dropdown
+            $("#node-input-outputFormat").val(this.outputFormat || "flat");
+            
+            // Initialize polling input
+            $("#node-input-polling").val(this.polling || 0);
+        }
+    });
+</script>
+
+<!-- Node Configuration Template -->
+<script type="text/html" data-template-name="goodwe-read">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    
+    <div class="form-row">
+        <label for="node-input-config"><i class="fa fa-cog"></i> Configuration</label>
+        <input type="text" id="node-input-config">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-outputFormat"><i class="fa fa-list"></i> Output Format</label>
+        <select id="node-input-outputFormat" style="width:70%">
+            <option value="flat">Flat (simple object)</option>
+            <option value="categorized">Categorized (grouped by type)</option>
+            <option value="array">Array (with metadata)</option>
+        </select>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-polling"><i class="fa fa-clock-o"></i> Polling</label>
+        <input type="number" id="node-input-polling" placeholder="0" style="width:70px" min="0">
+        <span style="margin-left:10px">seconds (0 = disabled)</span>
+    </div>
+</script>
+
+<!-- Node Help Text -->
+<script type="text/html" data-help-name="goodwe-read">
+    <p>A dedicated Node-RED node for reading runtime sensor data from GoodWe inverters.</p>
+    
+    <h3>Configuration</h3>
+    <dl class="message-properties">
+        <dt>Configuration <span class="property-type">goodwe-config</span></dt>
+        <dd>Reference to a shared GoodWe configuration node (required). Click the pencil icon to create or edit a configuration node.</dd>
+
+        <dt>Output Format <span class="property-type">string</span></dt>
+        <dd>Format of the output data:
+            <ul>
+                <li><strong>Flat</strong> - Simple object with sensor values (default)</li>
+                <li><strong>Categorized</strong> - Grouped by category (pv, battery, grid, energy, status)</li>
+                <li><strong>Array</strong> - Array of objects with metadata (id, name, value, unit, kind)</li>
+            </ul>
+        </dd>
+
+        <dt>Polling <span class="property-type">number</span></dt>
+        <dd>Auto-polling interval in seconds. Set to 0 to disable auto-polling (default). When enabled, the node will automatically read data at the specified interval.</dd>
+    </dl>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>payload <span class="property-type">any | object</span></dt>
+        <dd>Trigger message to read sensor data. Can be any value to read all sensors, or an object to filter specific sensors.</dd>
+    </dl>
+
+    <h4>Input Examples</h4>
+    <p><strong>Read all sensors:</strong></p>
+    <pre>msg.payload = true;  // or any value</pre>
+
+    <p><strong>Read specific sensor:</strong></p>
+    <pre>msg.payload = { sensor_id: "vpv1" };</pre>
+
+    <p><strong>Read multiple sensors:</strong></p>
+    <pre>msg.payload = { sensors: ["vpv1", "vpv2", "battery_soc"] };</pre>
+
+    <h3>Outputs</h3>
+    <dl class="message-properties">
+        <dt>payload <span class="property-type">object | array</span></dt>
+        <dd>Runtime sensor data in the selected output format</dd>
+
+        <dt>topic <span class="property-type">string</span></dt>
+        <dd>Set to "goodwe/runtime_data" if not already present in input</dd>
+
+        <dt>_timestamp <span class="property-type">string</span></dt>
+        <dd>ISO timestamp when the data was read</dd>
+
+        <dt>_inverter <span class="property-type">object</span></dt>
+        <dd>Inverter metadata (family, host)</dd>
+    </dl>
+
+    <h4>Output Format Examples</h4>
+    
+    <p><strong>Flat Format (default):</strong></p>
+    <pre>{
+    payload: {
+        vpv1: 245.5,
+        ipv1: 6.2,
+        battery_soc: 87,
+        // ... more sensors
+    },
+    topic: "goodwe/runtime_data",
+    _timestamp: "2025-11-02T...",
+    _inverter: { family: "ET", host: "192.168.1.100" }
+}</pre>
+
+    <p><strong>Categorized Format:</strong></p>
+    <pre>{
+    payload: {
+        pv: { vpv1: 245.5, ipv1: 6.2, ppv1: 1522 },
+        battery: { vbattery1: 51.2, battery_soc: 87 },
+        grid: { vac1: 230.5, iac1: 12.4, pac: 2875 },
+        energy: { e_day: 15.2, e_total: 4523.8 }
+    },
+    topic: "goodwe/runtime_data",
+    // ... metadata
+}</pre>
+
+    <p><strong>Array Format:</strong></p>
+    <pre>{
+    payload: [
+        { id: "vpv1", name: "PV1 Voltage", value: 245.5, unit: "V", kind: "PV" },
+        { id: "battery_soc", name: "Battery SoC", value: 87, unit: "%", kind: "BAT" }
+        // ... all sensors
+    ],
+    topic: "goodwe/runtime_data",
+    // ... metadata
+}</pre>
+
+    <h3>Auto-Polling</h3>
+    <p>When polling is enabled (interval > 0), the node will automatically read data at the specified interval. 
+    The polling continues even if there are errors, and stops when the node is closed or deleted.</p>
+
+    <p><strong>Use Cases:</strong></p>
+    <ul>
+        <li><strong>Flat Format:</strong> Simple dashboards, direct sensor access</li>
+        <li><strong>Categorized Format:</strong> Organized displays, grouped gauges</li>
+        <li><strong>Array Format:</strong> Dynamic UIs, tables, charts with metadata</li>
+    </ul>
+
+    <h3>Details</h3>
+    <p>This node connects to GoodWe inverters over the local network to retrieve runtime sensor values.
+    It supports both UDP (port 8899) and Modbus TCP (port 502) protocols.</p>
+    
+    <p>The node is based on the <code>marcelblijleven/goodwe</code> Python library and supports
+    multiple inverter families including ET, EH, BT, BH, ES, EM, BP, DT, MS, D-NS, and XS series.</p>
+
+    <h3>References</h3>
+    <ul>
+        <li><a href="https://github.com/marcelblijleven/goodwe">marcelblijleven/goodwe Python library</a></li>
+        <li><a href="https://github.com/pkot/node-red-contrib-goodwe">node-red-contrib-goodwe GitHub repository</a></li>
+    </ul>
+</script>
