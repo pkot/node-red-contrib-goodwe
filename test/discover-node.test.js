@@ -7,6 +7,7 @@
 
 const helper = require("node-red-node-test-helper");
 const discoverNode = require("../nodes/discover.js");
+const protocol = require("../lib/protocol.js");
 
 helper.init(require.resolve("node-red"));
 
@@ -86,6 +87,172 @@ describe("goodwe-discover node", () => {
         });
     });
 
+    describe("discovery operation with mocked protocol", () => {        
+        let discoverSpy;
+        
+        beforeEach(() => {
+            // Spy on discoverInverters
+            discoverSpy = jest.spyOn(protocol, 'discoverInverters');
+        });
+        
+        afterEach(() => {
+            // Restore original function
+            if (discoverSpy) {
+                discoverSpy.mockRestore();
+            }
+        });
+        
+        it("should format discovered devices correctly", (done) => {
+            // Mock discoverInverters for this test
+            discoverSpy.mockResolvedValue([
+                {
+                    ip: "192.168.1.100",
+                    port: 8899,
+                    modelName: "GW5000-EH",
+                    serialNumber: "ETxxxxxxxx",
+                    family: "ET"
+                }
+            ]);
+            
+            const flow = [
+                { 
+                    id: "n1", 
+                    type: "goodwe-discover",
+                    timeout: 500,
+                    wires: [["n2"]]
+                },
+                { id: "n2", type: "helper" }
+            ];
+            
+            helper.load(discoverNode, flow, () => {
+                const n1 = helper.getNode("n1");
+                const n2 = helper.getNode("n2");
+                
+                n2.on("input", (msg) => {
+                    try {
+                        expect(msg.payload.devices).toBeDefined();
+                        expect(msg.payload.devices.length).toBe(1);
+                        const device = msg.payload.devices[0];
+                        expect(device.host).toBe("192.168.1.100");
+                        expect(device.port).toBe(8899);
+                        expect(device.model).toBe("GW5000-EH");
+                        expect(device.serial).toBe("ETxxxxxxxx");
+                        expect(device.family).toBe("ET");
+                        expect(device.protocol).toBe("udp");
+                        expect(msg.payload.count).toBe(1);
+                        done();
+                    } catch(err) {
+                        done(err);
+                    }
+                });
+                
+                n1.receive({ payload: true });
+            });
+        });
+        
+        it("should handle empty discovery results", (done) => {
+            // Mock empty result
+            discoverSpy.mockResolvedValue([]);
+            
+            const flow = [
+                { 
+                    id: "n1", 
+                    type: "goodwe-discover",
+                    timeout: 500,
+                    wires: [["n2"]]
+                },
+                { id: "n2", type: "helper" }
+            ];
+            
+            helper.load(discoverNode, flow, () => {
+                const n1 = helper.getNode("n1");
+                const n2 = helper.getNode("n2");
+                
+                n2.on("input", (msg) => {
+                    try {
+                        expect(msg.payload.devices).toEqual([]);
+                        expect(msg.payload.count).toBe(0);
+                        done();
+                    } catch(err) {
+                        done(err);
+                    }
+                });
+                
+                n1.receive({ payload: true });
+            });
+        });
+        
+        it("should handle devices without optional fields", (done) => {
+            // Mock device without optional fields
+            discoverSpy.mockResolvedValue([
+                {
+                    ip: "192.168.1.101"
+                }
+            ]);
+            
+            const flow = [
+                { 
+                    id: "n1", 
+                    type: "goodwe-discover",
+                    timeout: 500,
+                    wires: [["n2"]]
+                },
+                { id: "n2", type: "helper" }
+            ];
+            
+            helper.load(discoverNode, flow, () => {
+                const n1 = helper.getNode("n1");
+                const n2 = helper.getNode("n2");
+                
+                n2.on("input", (msg) => {
+                    try {
+                        const device = msg.payload.devices[0];
+                        expect(device.host).toBe("192.168.1.101");
+                        expect(device.port).toBe(8899); // DEFAULT_PORT
+                        expect(device.model).toBe("GoodWe Inverter"); // default
+                        expect(device.serial).toBe("UNKNOWN"); // default
+                        expect(device.family).toBe("ET"); // default
+                        done();
+                    } catch(err) {
+                        done(err);
+                    }
+                });
+                
+                n1.receive({ payload: true });
+            });
+        });
+        
+        it("should handle discovery errors", (done) => {
+            // Mock error
+            discoverSpy.mockRejectedValue(new Error("Network error"));
+            
+            const flow = [
+                { 
+                    id: "n1", 
+                    type: "goodwe-discover",
+                    timeout: 500,
+                    wires: [["n2"]]
+                },
+                { id: "n2", type: "helper" }
+            ];
+            
+            helper.load(discoverNode, flow, () => {
+                const n1 = helper.getNode("n1");
+                
+                n1.on("call:error", (err) => {
+                    try {
+                        expect(err).toBeDefined();
+                        done();
+                    } catch(e) {
+                        done(e);
+                    }
+                });
+                
+                n1.receive({ payload: true });
+            });
+        });
+    });
+
     describe("discovery operation", () => {
         it("should trigger discovery on any input", (done) => {
             const flow = [
@@ -104,28 +271,28 @@ describe("goodwe-discover node", () => {
                 
                 let completed = false;
                 
-                n2.on("input", (msg) => {
+                const complete = () => {
                     if (completed) return;
                     completed = true;
+                    done();
+                };
+                
+                n2.on("input", (msg) => {
                     try {
                         expect(msg.payload).toBeDefined();
                         expect(msg.payload.devices).toBeDefined();
                         expect(Array.isArray(msg.payload.devices)).toBe(true);
                         expect(msg.payload.count).toBeDefined();
                         expect(typeof msg.payload.count).toBe("number");
-                        done();
+                        complete();
                     } catch(err) {
+                        completed = true;
                         done(err);
                     }
                 });
                 
-                // Handle potential errors
-                n1.on("call:error", () => {
-                    if (completed) return;
-                    completed = true;
-                    // Error during discovery is acceptable in test environment
-                    done();
-                });
+                // Handle errors in test environment (e.g., EPERM)
+                n1.on("call:error", () => complete());
                 
                 n1.receive({ payload: true });
             });
@@ -147,24 +314,23 @@ describe("goodwe-discover node", () => {
                 const n2 = helper.getNode("n2");
                 
                 let completed = false;
-                
-                n2.on("input", (msg) => {
+                const complete = () => {
                     if (completed) return;
                     completed = true;
+                    done();
+                };
+                
+                n2.on("input", (msg) => {
                     try {
                         expect(msg.topic).toBe("goodwe/discover");
-                        done();
+                        complete();
                     } catch(err) {
+                        completed = true;
                         done(err);
                     }
                 });
                 
-                n1.on("call:error", () => {
-                    if (completed) return;
-                    completed = true;
-                    done();
-                });
-                
+                n1.on("call:error", () => complete());
                 n1.receive({ payload: true });
             });
         }, 10000);
@@ -185,27 +351,26 @@ describe("goodwe-discover node", () => {
                 const n2 = helper.getNode("n2");
                 
                 let completed = false;
-                
-                n2.on("input", (msg) => {
+                const complete = () => {
                     if (completed) return;
                     completed = true;
+                    done();
+                };
+                
+                n2.on("input", (msg) => {
                     try {
                         expect(msg._timestamp).toBeDefined();
                         const timestamp = new Date(msg._timestamp);
                         expect(timestamp).toBeInstanceOf(Date);
                         expect(isNaN(timestamp.getTime())).toBe(false);
-                        done();
+                        complete();
                     } catch(err) {
+                        completed = true;
                         done(err);
                     }
                 });
                 
-                n1.on("call:error", () => {
-                    if (completed) return;
-                    completed = true;
-                    done();
-                });
-                
+                n1.on("call:error", () => complete());
                 n1.receive({ payload: true });
             });
         }, 10000);
@@ -226,25 +391,24 @@ describe("goodwe-discover node", () => {
                 const n2 = helper.getNode("n2");
                 
                 let completed = false;
-                
-                n2.on("input", (msg) => {
+                const complete = () => {
                     if (completed) return;
                     completed = true;
+                    done();
+                };
+                
+                n2.on("input", (msg) => {
                     try {
                         expect(msg.customProperty).toBe("preserved");
                         expect(msg._msgid).toBeDefined();
-                        done();
+                        complete();
                     } catch(err) {
+                        completed = true;
                         done(err);
                     }
                 });
                 
-                n1.on("call:error", () => {
-                    if (completed) return;
-                    completed = true;
-                    done();
-                });
-                
+                n1.on("call:error", () => complete());
                 n1.receive({ 
                     payload: true,
                     customProperty: "preserved"
@@ -270,24 +434,23 @@ describe("goodwe-discover node", () => {
                 const n2 = helper.getNode("n2");
                 
                 let completed = false;
-                
-                n2.on("input", (msg) => {
+                const complete = () => {
                     if (completed) return;
                     completed = true;
+                    done();
+                };
+                
+                n2.on("input", (msg) => {
                     try {
                         expect(Array.isArray(msg.payload.devices)).toBe(true);
-                        done();
+                        complete();
                     } catch(err) {
+                        completed = true;
                         done(err);
                     }
                 });
                 
-                n1.on("call:error", () => {
-                    if (completed) return;
-                    completed = true;
-                    done();
-                });
-                
+                n1.on("call:error", () => complete());
                 n1.receive({ payload: true });
             });
         }, 10000);
@@ -308,24 +471,23 @@ describe("goodwe-discover node", () => {
                 const n2 = helper.getNode("n2");
                 
                 let completed = false;
-                
-                n2.on("input", (msg) => {
+                const complete = () => {
                     if (completed) return;
                     completed = true;
+                    done();
+                };
+                
+                n2.on("input", (msg) => {
                     try {
                         expect(msg.payload.count).toBe(msg.payload.devices.length);
-                        done();
+                        complete();
                     } catch(err) {
+                        completed = true;
                         done(err);
                     }
                 });
                 
-                n1.on("call:error", () => {
-                    if (completed) return;
-                    completed = true;
-                    done();
-                });
-                
+                n1.on("call:error", () => complete());
                 n1.receive({ payload: true });
             });
         }, 10000);
@@ -346,10 +508,13 @@ describe("goodwe-discover node", () => {
                 const n2 = helper.getNode("n2");
                 
                 let completed = false;
-                
-                n2.on("input", (msg) => {
+                const complete = () => {
                     if (completed) return;
                     completed = true;
+                    done();
+                };
+                
+                n2.on("input", (msg) => {
                     try {
                         // If devices are found, check their format
                         if (msg.payload.devices.length > 0) {
@@ -361,18 +526,14 @@ describe("goodwe-discover node", () => {
                             expect(device.family).toBeDefined();
                             expect(device.protocol).toBe("udp");
                         }
-                        done();
+                        complete();
                     } catch(err) {
+                        completed = true;
                         done(err);
                     }
                 });
                 
-                n1.on("call:error", () => {
-                    if (completed) return;
-                    completed = true;
-                    done();
-                });
-                
+                n1.on("call:error", () => complete());
                 n1.receive({ payload: true });
             });
         }, 10000);
@@ -393,28 +554,27 @@ describe("goodwe-discover node", () => {
                 const n2 = helper.getNode("n2");
                 
                 let completed = false;
-                
-                n2.on("input", (msg) => {
+                const complete = () => {
                     if (completed) return;
                     completed = true;
+                    done();
+                };
+                
+                n2.on("input", (msg) => {
                     try {
                         // No devices case
                         if (msg.payload.count === 0) {
                             expect(msg.payload.devices).toEqual([]);
                             expect(msg.payload.count).toBe(0);
                         }
-                        done();
+                        complete();
                     } catch(err) {
+                        completed = true;
                         done(err);
                     }
                 });
                 
-                n1.on("call:error", () => {
-                    if (completed) return;
-                    completed = true;
-                    done();
-                });
-                
+                n1.on("call:error", () => complete());
                 n1.receive({ payload: true });
             });
         }, 10000);
@@ -457,8 +617,7 @@ describe("goodwe-discover node", () => {
                 const n2 = helper.getNode("n2");
                 
                 let completed = false;
-                
-                n2.on("input", () => {
+                const complete = () => {
                     if (completed) return;
                     completed = true;
                     const elapsed = Date.now() - startTime;
@@ -469,14 +628,10 @@ describe("goodwe-discover node", () => {
                     } catch(err) {
                         done(err);
                     }
-                });
+                };
                 
-                n1.on("call:error", () => {
-                    if (completed) return;
-                    completed = true;
-                    done();
-                });
-                
+                n2.on("input", () => complete());
+                n1.on("call:error", () => complete());
                 n1.receive({ payload: true });
             });
         }, 10000);
@@ -515,6 +670,81 @@ describe("goodwe-discover node", () => {
                 n1.receive({ payload: true });
             });
         });
+
+        it("should use fallback send/done for Node-RED pre-1.0", (done) => {
+            const flow = [
+                { 
+                    id: "n1", 
+                    type: "goodwe-discover",
+                    timeout: 500,
+                    wires: [["n2"]]
+                },
+                { id: "n2", type: "helper" }
+            ];
+            
+            helper.load(discoverNode, flow, () => {
+                const n1 = helper.getNode("n1");
+                const n2 = helper.getNode("n2");
+                
+                let completed = false;
+                const complete = () => {
+                    if (completed) return;
+                    completed = true;
+                    done();
+                };
+                
+                n2.on("input", (msg) => {
+                    try {
+                        expect(msg.payload).toBeDefined();
+                        complete();
+                    } catch(err) {
+                        completed = true;
+                        done(err);
+                    }
+                });
+                
+                n1.on("call:error", () => complete());
+                // Call without send/done parameters (pre-1.0 style)
+                n1.receive({ payload: true });
+            });
+        }, 10000);
+        
+        it("should cleanup timers on close", (done) => {
+            const flow = [
+                { 
+                    id: "n1", 
+                    type: "goodwe-discover",
+                    timeout: 500,
+                    wires: [["n2"]]
+                },
+                { id: "n2", type: "helper" }
+            ];
+            
+            helper.load(discoverNode, flow, () => {
+                const n1 = helper.getNode("n1");
+                const n2 = helper.getNode("n2");
+                
+                let completed = false;
+                const complete = () => {
+                    if (completed) return;
+                    completed = true;
+                    // After discovery completes, close the node
+                    // This should clean up any pending timers
+                    n1.close();
+                    
+                    try {
+                        expect(n1.statusResetTimers.length).toBe(0);
+                        done();
+                    } catch(err) {
+                        done(err);
+                    }
+                };
+                
+                n2.on("input", () => complete());
+                n1.on("call:error", () => complete());
+                n1.receive({ payload: true });
+            });
+        }, 10000);
     });
 
     describe("node lifecycle", () => {

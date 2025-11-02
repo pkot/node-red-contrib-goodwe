@@ -5,7 +5,7 @@
  * GoodWe inverters on the local network using UDP broadcast.
  */
 
-const { discoverInverters } = require("../lib/protocol.js");
+const protocol = require("../lib/protocol.js");
 
 // Constants
 const DEFAULT_PORT = 8899;
@@ -24,6 +24,9 @@ module.exports = function(RED) {
         // Node properties
         node.timeout = parseInt(config.timeout) || 5000;
         node.broadcastAddress = config.broadcastAddress || "255.255.255.255";
+        
+        // Track pending timers for cleanup
+        node.statusResetTimers = [];
 
         // Initialize status
         node.status({ fill: "grey", shape: "ring", text: "ready" });
@@ -40,7 +43,7 @@ module.exports = function(RED) {
                 node.status({ fill: "blue", shape: "dot", text: "discovering..." });
 
                 // Perform discovery
-                const inverters = await discoverInverters({
+                const inverters = await protocol.discoverInverters({
                     timeout: node.timeout,
                     broadcastAddress: node.broadcastAddress
                 });
@@ -73,9 +76,11 @@ module.exports = function(RED) {
                 node.status({ fill: "green", shape: "dot", text: statusText });
 
                 // Reset status after 2 seconds
-                setTimeout(() => {
+                const timer = setTimeout(() => {
                     node.status({ fill: "grey", shape: "ring", text: "ready" });
                 }, 2000);
+                timer.unref(); // Allow process to exit
+                node.statusResetTimers.push(timer);
 
                 send(outputMsg);
                 if (done) done();
@@ -83,9 +88,11 @@ module.exports = function(RED) {
                 node.status({ fill: "red", shape: "ring", text: "discovery failed" });
                 
                 // Reset status after 2 seconds
-                setTimeout(() => {
+                const timer = setTimeout(() => {
                     node.status({ fill: "grey", shape: "ring", text: "ready" });
                 }, 2000);
+                timer.unref(); // Allow process to exit
+                node.statusResetTimers.push(timer);
 
                 if (done) {
                     done(err);
@@ -110,6 +117,10 @@ module.exports = function(RED) {
          * Cleanup on node close
          */
         node.on("close", function(done) {
+            // Clear any pending status reset timers
+            node.statusResetTimers.forEach(timer => clearTimeout(timer));
+            node.statusResetTimers = [];
+            
             node.status({});
             done();
         });
