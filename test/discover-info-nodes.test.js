@@ -46,6 +46,7 @@ describe("GoodWe Discover Node", function () {
 
             n2.on("input", function (msg) {
                 try {
+                    // Log actual payload structure for debugging
                     expect(msg.payload).toBeDefined();
                     // Discovery may fail in test environment due to UDP broadcast permissions
                     // Check if it's either a success or error response
@@ -68,6 +69,40 @@ describe("GoodWe Discover Node", function () {
             n1.receive({ payload: true });
         });
     }, 10000); // Increase timeout for discovery
+
+    it("should accept custom timeout", function (done) {
+        const flow = [
+            { id: "n1", type: "goodwe-discover", name: "test discover", timeout: 2000, wires: [["n2"]] },
+            { id: "n2", type: "helper" }
+        ];
+
+        helper.load(discoverNode, flow, function () {
+            const n1 = helper.getNode("n1");
+            const n2 = helper.getNode("n2");
+
+            n2.on("input", function (msg) {
+                try {
+                    expect(msg.payload).toBeDefined();
+                    done();
+                } catch (err) {
+                    done(err);
+                }
+            });
+
+            n1.receive({ payload: { timeout: 1000 } });
+        });
+    }, 10000);
+
+    it("should handle close event properly", function (done) {
+        const flow = [
+            { id: "n1", type: "goodwe-discover", name: "test discover", wires: [["n2"]] },
+            { id: "n2", type: "helper" }
+        ];
+
+        helper.load(discoverNode, flow, function () {
+            helper.unload().then(() => done());
+        });
+    });
 });
 
 describe("GoodWe Info Node", function () {
@@ -122,6 +157,32 @@ describe("GoodWe Info Node", function () {
             });
 
             n1.receive({ payload: true });
+        });
+    });
+
+    it("should handle missing config node", function (done) {
+        const flow = [
+            { id: "n1", type: "goodwe-info", name: "test info", config: "", wires: [["n2"]] },
+            { id: "n2", type: "helper" }
+        ];
+
+        helper.load(infoNode, flow, function () {
+            const n1 = helper.getNode("n1");
+            expect(n1).toBeDefined();
+            expect(n1.configNode).toBeNull();
+            done();
+        });
+    });
+
+    it("should handle close event properly", function (done) {
+        const flow = [
+            { id: "c1", type: "goodwe-config", name: "test config", host: "192.168.1.100" },
+            { id: "n1", type: "goodwe-info", name: "test info", config: "c1", wires: [["n2"]] },
+            { id: "n2", type: "helper" }
+        ];
+
+        helper.load([configNode, infoNode], flow, function () {
+            helper.unload().then(() => done());
         });
     });
 });

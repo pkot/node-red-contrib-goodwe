@@ -120,4 +120,84 @@ describe("GoodWe Read Node", function () {
             n1.receive({ payload: true });
         });
     });
+
+    it("should handle missing config node", function (done) {
+        const flow = [
+            { id: "n1", type: "goodwe-read", name: "test read", config: "", wires: [["n2"]] },
+            { id: "n2", type: "helper" }
+        ];
+
+        helper.load(readNode, flow, function () {
+            const n1 = helper.getNode("n1");
+            expect(n1).toBeDefined();
+            expect(n1.configNode).toBeNull();
+            done();
+        });
+    });
+
+    it("should filter specific sensor", function (done) {
+        const flow = [
+            { id: "c1", type: "goodwe-config", name: "test config", host: "192.168.1.100" },
+            { id: "n1", type: "goodwe-read", name: "test read", config: "c1", wires: [["n2"]] },
+            { id: "n2", type: "helper" }
+        ];
+
+        helper.load([configNode, readNode], flow, function () {
+            const n1 = helper.getNode("n1");
+            const n2 = helper.getNode("n2");
+
+            n2.on("input", function (msg) {
+                try {
+                    expect(msg.payload).toBeDefined();
+                    expect(msg.payload.vpv1).toBeDefined();
+                    expect(Object.keys(msg.payload).length).toBe(1);
+                    done();
+                } catch (err) {
+                    done(err);
+                }
+            });
+
+            n1.receive({ payload: { sensor_id: "vpv1" } });
+        });
+    });
+
+    it("should filter multiple sensors", function (done) {
+        const flow = [
+            { id: "c1", type: "goodwe-config", name: "test config", host: "192.168.1.100" },
+            { id: "n1", type: "goodwe-read", name: "test read", config: "c1", wires: [["n2"]] },
+            { id: "n2", type: "helper" }
+        ];
+
+        helper.load([configNode, readNode], flow, function () {
+            const n1 = helper.getNode("n1");
+            const n2 = helper.getNode("n2");
+
+            n2.on("input", function (msg) {
+                try {
+                    expect(msg.payload).toBeDefined();
+                    expect(msg.payload.vpv1).toBeDefined();
+                    expect(msg.payload.ipv1).toBeDefined();
+                    done();
+                } catch (err) {
+                    done(err);
+                }
+            });
+
+            n1.receive({ payload: { sensors: ["vpv1", "ipv1"] } });
+        });
+    });
+
+    it("should handle close event properly", function (done) {
+        const flow = [
+            { id: "c1", type: "goodwe-config", name: "test config", host: "192.168.1.100" },
+            { id: "n1", type: "goodwe-read", name: "test read", config: "c1", pollingInterval: 1, wires: [["n2"]] },
+            { id: "n2", type: "helper" }
+        ];
+
+        helper.load([configNode, readNode], flow, function () {
+            const n1 = helper.getNode("n1");
+            expect(n1.pollingTimer).toBeDefined();
+            helper.unload().then(() => done());
+        });
+    });
 });

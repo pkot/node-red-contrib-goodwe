@@ -3,7 +3,9 @@ module.exports = {
     coverageDirectory: "coverage",
     collectCoverageFrom: [
         "nodes/**/*.js",
-        "!nodes/**/*.spec.js"
+        "lib/**/*.js",
+        "!nodes/**/*.spec.js",
+        "!lib/protocol.js"  // Exclude pre-existing protocol.js from coverage requirements
     ],
     testMatch: [
         "**/test/**/*.test.js"
