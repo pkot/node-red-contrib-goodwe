@@ -15,7 +15,6 @@
 const helper = require("node-red-node-test-helper");
 const readNode = require("../nodes/read.js");
 const configNode = require("../nodes/config.js");
-const testUtils = require("./test-utils.js");
 
 helper.init(require.resolve("node-red"));
 
