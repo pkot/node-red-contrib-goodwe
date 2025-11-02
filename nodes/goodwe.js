@@ -137,11 +137,35 @@ module.exports = function(RED) {
         RED.nodes.createNode(this, config);
         const node = this;
 
-        // Store configuration
-        node.host = config.host;
-        node.port = config.port || 8899;
-        node.protocol = config.protocol || "udp";
-        node.family = config.family || "ET";
+        // Get configuration from config node or inline
+        let configSource;
+        if (config.config) {
+            // Use shared configuration node
+            configSource = RED.nodes.getNode(config.config);
+            if (!configSource) {
+                node.error("Configuration node not found");
+                node.status({ fill: "red", shape: "ring", text: "config error" });
+                return;
+            }
+            // Get config from configuration node
+            const cfg = configSource.getConfig();
+            node.host = cfg.host;
+            node.port = cfg.port;
+            node.protocol = cfg.protocol;
+            node.family = cfg.family;
+            node.timeout = cfg.timeout;
+            node.retries = cfg.retries;
+            node.configNode = configSource;
+        } else {
+            // Use inline configuration
+            node.host = config.host;
+            node.port = config.port || 8899;
+            node.protocol = config.protocol || "udp";
+            node.family = config.family || "ET";
+            node.timeout = 1000;
+            node.retries = 3;
+            node.configNode = null;
+        }
 
         // Initialize protocol handler
         node.protocolHandler = null;
@@ -193,8 +217,8 @@ module.exports = function(RED) {
                         host: node.host,
                         port: node.port,
                         protocol: node.protocol,
-                        timeout: 1000,
-                        retries: 3
+                        timeout: node.timeout || 1000,
+                        retries: node.retries || 3
                     });
 
                     // Setup status event handlers
