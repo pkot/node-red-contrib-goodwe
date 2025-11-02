@@ -1,0 +1,125 @@
+[
+    {
+        "id": "config-node",
+        "type": "goodwe-config",
+        "name": "Living Room Inverter",
+        "host": "192.168.1.100",
+        "port": "8899",
+        "protocol": "udp",
+        "family": "ET",
+        "timeout": 1000,
+        "retries": 3
+    },
+    {
+        "id": "read-auto-poll",
+        "type": "goodwe-read",
+        "name": "Auto Poll Every 60s",
+        "config": "config-node",
+        "outputFormat": "flat",
+        "polling": 60,
+        "wires": [["debug-auto-poll"]],
+        "x": 200,
+        "y": 100
+    },
+    {
+        "id": "debug-auto-poll",
+        "type": "debug",
+        "name": "Auto Poll Data",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 450,
+        "y": 100
+    },
+    {
+        "id": "inject-manual",
+        "type": "inject",
+        "name": "Manual Read",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "true",
+        "payloadType": "bool",
+        "x": 150,
+        "y": 200,
+        "wires": [["read-manual"]]
+    },
+    {
+        "id": "read-manual",
+        "type": "goodwe-read",
+        "name": "Manual Read",
+        "config": "config-node",
+        "outputFormat": "categorized",
+        "polling": 0,
+        "wires": [["debug-manual"]],
+        "x": 350,
+        "y": 200
+    },
+    {
+        "id": "debug-manual",
+        "type": "debug",
+        "name": "Categorized Data",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 580,
+        "y": 200
+    },
+    {
+        "id": "inject-specific",
+        "type": "inject",
+        "name": "Read Specific Sensors",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"sensors\":[\"vpv1\",\"vpv2\",\"battery_soc\",\"pac\"]}",
+        "payloadType": "json",
+        "x": 180,
+        "y": 300,
+        "wires": [["read-specific"]]
+    },
+    {
+        "id": "read-specific",
+        "type": "goodwe-read",
+        "name": "Read Specific",
+        "config": "config-node",
+        "outputFormat": "array",
+        "polling": 0,
+        "wires": [["debug-specific"]],
+        "x": 420,
+        "y": 300
+    },
+    {
+        "id": "debug-specific",
+        "type": "debug",
+        "name": "Array Data",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 610,
+        "y": 300
+    }
+]

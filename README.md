@@ -64,6 +64,14 @@ The GoodWe node requires a configuration node to define connection settings.
 - ✅ Easier to manage multiple inverters
 - ✅ Centralized connection lifecycle management
 
+### Available Nodes
+
+This package provides the following Node-RED nodes:
+
+- **goodwe-config** - Configuration node for inverter connection settings (shared across other nodes)
+- **goodwe-read** - Dedicated node for reading runtime sensor data with multiple output formats
+- **goodwe** - Unified node for read, write, and discovery operations (legacy)
+
 ### Configuration Node Settings
 
 The configuration node allows you to configure:
@@ -81,9 +89,199 @@ The configuration node allows you to configure:
 - **Comm Address**: Communication address (auto, 0xF7, or 0x7F)
 - **Keep Alive**: Keep connection alive between requests (default: true)
 
+### Read Node (goodwe-read)
+
+The dedicated read node provides an optimized interface for reading runtime sensor data with support for multiple output formats and auto-polling.
+
+**Node Settings:**
+- **Name**: Node display name
+- **Configuration**: Reference to a goodwe-config node (required)
+- **Output Format**: Data format for output
+  - **Flat** (default) - Simple object with sensor values
+  - **Categorized** - Grouped by category (pv, battery, grid, energy, status)
+  - **Array** - Array of objects with metadata (id, name, value, unit, kind)
+- **Polling**: Auto-polling interval in seconds (0 = disabled)
+
+**Input Messages:**
+
+Read all sensors:
+```javascript
+msg.payload = true;  // or any value
+```
+
+Read specific sensor:
+```javascript
+msg.payload = { sensor_id: "vpv1" };
+```
+
+Read multiple sensors:
+```javascript
+msg.payload = { sensors: ["vpv1", "vpv2", "battery_soc"] };
+```
+
+**Output Examples:**
+
+Flat format (default):
+```javascript
+{
+    payload: {
+        vpv1: 245.5,
+        ipv1: 6.2,
+        battery_soc: 87,
+        // ... more sensors
+    },
+    topic: "goodwe/runtime_data",
+    _timestamp: "2025-11-02T...",
+    _inverter: { family: "ET", host: "192.168.1.100" }
+}
+```
+
+Categorized format:
+```javascript
+{
+    payload: {
+        pv: { vpv1: 245.5, ipv1: 6.2, ppv1: 1522 },
+        battery: { vbattery1: 51.2, battery_soc: 87 },
+        grid: { vac1: 230.5, iac1: 12.4, pac: 2875 },
+        energy: { e_day: 15.2, e_total: 4523.8 }
+    },
+    topic: "goodwe/runtime_data",
+    // ... metadata
+}
+```
+
+Array format (with metadata):
+```javascript
+{
+    payload: [
+        { id: "vpv1", name: "PV1 Voltage", value: 245.5, unit: "V", kind: "PV" },
+        { id: "battery_soc", name: "Battery SoC", value: 87, unit: "%", kind: "BAT" }
+        // ... all sensors
+    ],
+    topic: "goodwe/runtime_data",
+    // ... metadata
+}
+```
+
+**Use Cases:**
+- **Flat Format**: Simple dashboards, direct sensor access
+- **Categorized Format**: Organized displays, grouped gauges
+- **Array Format**: Dynamic UIs, tables, charts with metadata
+
 ### Example Flows
 
-#### Example 1: Basic Usage
+#### Example 1: Basic Read with Auto-Polling
+
+Using the dedicated read node with auto-polling enabled:
+
+```json
+[
+    {
+        "id": "config-node",
+        "type": "goodwe-config",
+        "name": "Living Room Inverter",
+        "host": "192.168.1.100",
+        "port": "8899",
+        "protocol": "udp",
+        "family": "ET"
+    },
+    {
+        "id": "read-node",
+        "type": "goodwe-read",
+        "name": "Read Inverter Data",
+        "config": "config-node",
+        "outputFormat": "flat",
+        "polling": 60,
+        "wires": [["debug-node"]]
+    },
+    {
+        "id": "debug-node",
+        "type": "debug",
+        "name": "Show Data"
+    }
+]
+```
+
+#### Example 2: Read with Categorized Output
+
+Using categorized format for organized dashboards:
+
+```json
+[
+    {
+        "id": "config-node",
+        "type": "goodwe-config",
+        "name": "Living Room Inverter",
+        "host": "192.168.1.100",
+        "port": "8899",
+        "protocol": "udp",
+        "family": "ET"
+    },
+    {
+        "id": "inject-node",
+        "type": "inject",
+        "name": "Read Data",
+        "payload": "true",
+        "wires": [["read-node"]]
+    },
+    {
+        "id": "read-node",
+        "type": "goodwe-read",
+        "name": "Read Categorized",
+        "config": "config-node",
+        "outputFormat": "categorized",
+        "polling": 0,
+        "wires": [["debug-node"]]
+    },
+    {
+        "id": "debug-node",
+        "type": "debug",
+        "name": "Show Data"
+    }
+]
+```
+
+#### Example 3: Read Specific Sensors
+
+Reading only specific sensors using array format:
+
+```json
+[
+    {
+        "id": "config-node",
+        "type": "goodwe-config",
+        "name": "Living Room Inverter",
+        "host": "192.168.1.100",
+        "port": "8899",
+        "protocol": "udp",
+        "family": "ET"
+    },
+    {
+        "id": "inject-node",
+        "type": "inject",
+        "name": "Read Specific",
+        "payload": "{\"sensors\":[\"vpv1\",\"battery_soc\",\"pac\"]}",
+        "payloadType": "json",
+        "wires": [["read-node"]]
+    },
+    {
+        "id": "read-node",
+        "type": "goodwe-read",
+        "name": "Read Specific Sensors",
+        "config": "config-node",
+        "outputFormat": "array",
+        "polling": 0,
+        "wires": [["debug-node"]]
+    },
+    {
+        "id": "debug-node",
+        "type": "debug",
+        "name": "Show Data"
+    }
+]
+```
+
+#### Example 4: Legacy Unified Node (Basic Usage)
 
 ```json
 [
@@ -121,7 +319,7 @@ The configuration node allows you to configure:
 ]
 ```
 
-#### Example 2: Multiple Nodes Sharing Configuration
+#### Example 5: Legacy Unified Node (Multiple Nodes Sharing Configuration)
 
 ```json
 [
