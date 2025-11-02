@@ -24,7 +24,8 @@
   },
   "node-red": {
     "nodes": {
-      "goodwe": "nodes/goodwe.js"
+      "goodwe": "nodes/goodwe.js",
+      "goodwe-config": "nodes/config.js"
     }
   },
   "engines": {

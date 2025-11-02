@@ -1,0 +1,203 @@
+<!-- GoodWe Configuration Node -->
+<script type="text/javascript">
+    RED.nodes.registerType('goodwe-config', {
+        category: 'config',
+        defaults: {
+            name: { value: "" },
+            host: { 
+                value: "", 
+                required: true, 
+                validate: RED.validators.regex(/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|^[a-zA-Z0-9.-]+$/)
+            },
+            port: { 
+                value: 8899, 
+                required: true, 
+                validate: function(v) {
+                    return RED.validators.number()(v) && v >= 1 && v <= 65535;
+                }
+            },
+            protocol: { value: "udp" },
+            family: { value: "ET" },
+            timeout: { 
+                value: 1000,
+                validate: function(v) {
+                    return !v || (RED.validators.number()(v) && v >= 100);
+                }
+            },
+            retries: { 
+                value: 3,
+                validate: function(v) {
+                    return !v || (RED.validators.number()(v) && v >= 0);
+                }
+            },
+            commAddr: { value: "auto" },
+            keepAlive: { value: true }
+        },
+        label: function() {
+            return this.name || "GoodWe " + (this.host || "config");
+        },
+        oneditprepare: function() {
+            // Update port based on protocol selection
+            $("#node-config-input-protocol").change(function() {
+                const protocol = $(this).val();
+                if (protocol === "udp") {
+                    $("#node-config-input-port").val(8899);
+                } else if (protocol === "modbus") {
+                    $("#node-config-input-port").val(502);
+                }
+            });
+            
+            // Handle advanced settings toggle
+            const advancedToggle = $("#advanced-settings-toggle");
+            const advancedSection = $("#advanced-settings-section");
+            
+            advancedToggle.click(function() {
+                advancedSection.toggle();
+                const icon = advancedToggle.find("i");
+                if (advancedSection.is(":visible")) {
+                    icon.removeClass("fa-caret-right").addClass("fa-caret-down");
+                } else {
+                    icon.removeClass("fa-caret-down").addClass("fa-caret-right");
+                }
+            });
+            
+            // Initially hide advanced settings
+            advancedSection.hide();
+        }
+    });
+</script>
+
+<!-- Configuration Template -->
+<script type="text/html" data-template-name="goodwe-config">
+    <div class="form-row">
+        <label for="node-config-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-config-input-name" placeholder="My GoodWe Inverter">
+    </div>
+    
+    <div class="form-row">
+        <label for="node-config-input-host"><i class="fa fa-server"></i> Host</label>
+        <input type="text" id="node-config-input-host" placeholder="192.168.1.100 or inverter.local">
+    </div>
+    
+    <div class="form-row">
+        <label for="node-config-input-protocol"><i class="fa fa-exchange"></i> Protocol</label>
+        <select id="node-config-input-protocol">
+            <option value="udp">UDP</option>
+            <option value="modbus">Modbus TCP</option>
+        </select>
+    </div>
+    
+    <div class="form-row">
+        <label for="node-config-input-port"><i class="fa fa-plug"></i> Port</label>
+        <input type="number" id="node-config-input-port" placeholder="8899">
+    </div>
+    
+    <div class="form-row">
+        <label for="node-config-input-family"><i class="fa fa-microchip"></i> Inverter Family</label>
+        <select id="node-config-input-family">
+            <option value="ET">ET Series</option>
+            <option value="EH">EH Series</option>
+            <option value="BT">BT Series</option>
+            <option value="BH">BH Series</option>
+            <option value="ES">ES Series</option>
+            <option value="EM">EM Series</option>
+            <option value="BP">BP Series</option>
+            <option value="DT">DT Series</option>
+            <option value="MS">MS Series</option>
+            <option value="D-NS">D-NS Series</option>
+            <option value="XS">XS Series</option>
+        </select>
+    </div>
+    
+    <div class="form-row">
+        <label>&nbsp;</label>
+        <a id="advanced-settings-toggle" class="editor-button" style="width: auto; margin-top: 5px;">
+            <i class="fa fa-caret-right"></i> Advanced Settings
+        </a>
+    </div>
+    
+    <div id="advanced-settings-section" style="padding-left: 20px; border-left: 2px solid #ccc; margin-left: 110px;">
+        <div class="form-row">
+            <label for="node-config-input-timeout"><i class="fa fa-clock-o"></i> Timeout</label>
+            <input type="number" id="node-config-input-timeout" placeholder="1000">
+            <span style="margin-left: 5px;">ms</span>
+        </div>
+        
+        <div class="form-row">
+            <label for="node-config-input-retries"><i class="fa fa-refresh"></i> Retries</label>
+            <input type="number" id="node-config-input-retries" placeholder="3">
+        </div>
+        
+        <div class="form-row">
+            <label for="node-config-input-commAddr"><i class="fa fa-address-card"></i> Comm Address</label>
+            <select id="node-config-input-commAddr">
+                <option value="auto">Auto (detect)</option>
+                <option value="0xF7">0xF7</option>
+                <option value="0x7F">0x7F</option>
+            </select>
+        </div>
+        
+        <div class="form-row">
+            <label for="node-config-input-keepAlive"><i class="fa fa-plug"></i> Keep Alive</label>
+            <input type="checkbox" id="node-config-input-keepAlive" style="display: inline-block; width: auto; vertical-align: top;">
+            <span style="margin-left: 5px;">Keep connection alive</span>
+        </div>
+    </div>
+</script>
+
+<!-- Help Text -->
+<script type="text/html" data-help-name="goodwe-config">
+    <p>Configuration node for GoodWe inverter connection settings.</p>
+    
+    <h3>Configuration</h3>
+    <dl class="message-properties">
+        <dt>Name <span class="property-type">string</span></dt>
+        <dd>Friendly name to identify this configuration</dd>
+        
+        <dt>Host <span class="property-type">string</span></dt>
+        <dd>IP address or hostname of the GoodWe inverter (required)</dd>
+        
+        <dt>Protocol <span class="property-type">string</span></dt>
+        <dd>Communication protocol: UDP (port 8899) or Modbus TCP (port 502)</dd>
+        
+        <dt>Port <span class="property-type">number</span></dt>
+        <dd>Communication port (default: 8899 for UDP, 502 for Modbus TCP)</dd>
+        
+        <dt>Inverter Family <span class="property-type">string</span></dt>
+        <dd>The series/family of your GoodWe inverter (ET, EH, BT, BH, ES, EM, BP, DT, MS, D-NS, XS)</dd>
+    </dl>
+    
+    <h3>Advanced Settings</h3>
+    <dl class="message-properties">
+        <dt>Timeout <span class="property-type">number</span></dt>
+        <dd>Response timeout in milliseconds (default: 1000, minimum: 100)</dd>
+        
+        <dt>Retries <span class="property-type">number</span></dt>
+        <dd>Number of retry attempts for failed requests (default: 3, minimum: 0)</dd>
+        
+        <dt>Comm Address <span class="property-type">string</span></dt>
+        <dd>Communication address for the inverter (auto, 0xF7, or 0x7F)</dd>
+        
+        <dt>Keep Alive <span class="property-type">boolean</span></dt>
+        <dd>Keep connection alive between requests (default: true)</dd>
+    </dl>
+    
+    <h3>Details</h3>
+    <p>This configuration node stores connection settings for GoodWe inverters. Multiple GoodWe operational nodes 
+    can share a single configuration node, eliminating the need to duplicate connection settings.</p>
+    
+    <p>The protocol field automatically updates the port when changed:
+    <ul>
+        <li>UDP: port 8899 (default)</li>
+        <li>Modbus TCP: port 502</li>
+    </ul>
+    </p>
+    
+    <h3>Validation Rules</h3>
+    <ul>
+        <li><strong>Host:</strong> Must be a valid IP address or hostname</li>
+        <li><strong>Port:</strong> Must be between 1 and 65535</li>
+        <li><strong>Timeout:</strong> Must be at least 100ms</li>
+        <li><strong>Retries:</strong> Must be 0 or greater</li>
+    </ul>
+</script>
