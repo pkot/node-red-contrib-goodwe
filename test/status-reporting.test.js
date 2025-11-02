@@ -7,6 +7,7 @@
 
 const helper = require("node-red-node-test-helper");
 const goodweNode = require("../nodes/goodwe.js");
+const configNode = require("../nodes/config.js");
 
 helper.init(require.resolve("node-red"));
 
@@ -24,14 +25,22 @@ describe("goodwe status reporting", () => {
     describe("initial status", () => {
         it("should show 'disconnected' status initially", (done) => {
             const flow = [
-                { 
-                    id: "n1", 
-                    type: "goodwe",
-                    host: "192.168.1.100"
+        { 
+            id: "c9",
+            type: "goodwe-config",
+            host: "192.168.1.100",
+            port: 8899,
+            protocol: "udp",
+            family: "ET"
+        },
+        {
+            id: "n1",
+            type: "goodwe",
+            config: "c9"
                 }
             ];
             
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 const n1 = helper.getNode("n1");
                 try {
                     // The node should call status() with disconnected state
@@ -47,16 +56,24 @@ describe("goodwe status reporting", () => {
     describe("status during operations", () => {
         it("should update status when processing message", (done) => {
             const flow = [
-                { 
-                    id: "n1", 
-                    type: "goodwe",
-                    host: "192.168.1.100",
+        { 
+            id: "c8",
+            type: "goodwe-config",
+            host: "192.168.1.100",
+            port: 8899,
+            protocol: "udp",
+            family: "ET"
+        },
+        {
+            id: "n1",
+            type: "goodwe",
+            config: "c8",
                     wires: [["n2"]]
                 },
                 { id: "n2", type: "helper" }
             ];
             
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
                 
@@ -73,14 +90,22 @@ describe("goodwe status reporting", () => {
     describe("status indicators", () => {
         it("should use grey ring for disconnected", (done) => {
             const flow = [
-                { 
-                    id: "n1", 
-                    type: "goodwe",
-                    host: "192.168.1.100"
+        { 
+            id: "c7",
+            type: "goodwe-config",
+            host: "192.168.1.100",
+            port: 8899,
+            protocol: "udp",
+            family: "ET"
+        },
+        {
+            id: "n1",
+            type: "goodwe",
+            config: "c7"
                 }
             ];
             
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 // Verify initial status
                 // Note: Status verification requires Node-RED runtime support
                 done();
@@ -89,16 +114,24 @@ describe("goodwe status reporting", () => {
 
         it("should use yellow ring for connecting", (done) => {
             const flow = [
-                { 
-                    id: "n1", 
-                    type: "goodwe",
-                    host: "192.168.1.100",
+        { 
+            id: "c6",
+            type: "goodwe-config",
+            host: "192.168.1.100",
+            port: 8899,
+            protocol: "udp",
+            family: "ET"
+        },
+        {
+            id: "n1",
+            type: "goodwe",
+            config: "c6",
                     wires: [["n2"]]
                 },
                 { id: "n2", type: "helper" }
             ];
             
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
                 
@@ -112,16 +145,24 @@ describe("goodwe status reporting", () => {
 
         it("should use blue dot for reading", (done) => {
             const flow = [
-                { 
-                    id: "n1", 
-                    type: "goodwe",
-                    host: "192.168.1.100",
+        { 
+            id: "c5",
+            type: "goodwe-config",
+            host: "192.168.1.100",
+            port: 8899,
+            protocol: "udp",
+            family: "ET"
+        },
+        {
+            id: "n1",
+            type: "goodwe",
+            config: "c5",
                     wires: [["n2"]]
                 },
                 { id: "n2", type: "helper" }
             ];
             
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
                 
@@ -135,16 +176,24 @@ describe("goodwe status reporting", () => {
 
         it("should use green dot for success", (done) => {
             const flow = [
-                { 
-                    id: "n1", 
-                    type: "goodwe",
-                    host: "192.168.1.100",
+        { 
+            id: "c4",
+            type: "goodwe-config",
+            host: "192.168.1.100",
+            port: 8899,
+            protocol: "udp",
+            family: "ET"
+        },
+        {
+            id: "n1",
+            type: "goodwe",
+            config: "c4",
                     wires: [["n2"]]
                 },
                 { id: "n2", type: "helper" }
             ];
             
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
                 
@@ -166,14 +215,22 @@ describe("goodwe status reporting", () => {
     describe("status text", () => {
         it("should display appropriate text for each state", (done) => {
             const flow = [
-                { 
-                    id: "n1", 
-                    type: "goodwe",
-                    host: "192.168.1.100"
+        { 
+            id: "c3",
+            type: "goodwe-config",
+            host: "192.168.1.100",
+            port: 8899,
+            protocol: "udp",
+            family: "ET"
+        },
+        {
+            id: "n1",
+            type: "goodwe",
+            config: "c3"
                 }
             ];
             
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 // Verify status text matches design spec
                 // disconnected, connecting..., reading..., ok, error: message
                 done();
@@ -194,14 +251,22 @@ describe("goodwe status reporting", () => {
     describe("status lifecycle", () => {
         it("should clear status on node close", (done) => {
             const flow = [
-                { 
-                    id: "n1", 
-                    type: "goodwe",
-                    host: "192.168.1.100"
+        { 
+            id: "c2",
+            type: "goodwe-config",
+            host: "192.168.1.100",
+            port: 8899,
+            protocol: "udp",
+            family: "ET"
+        },
+        {
+            id: "n1",
+            type: "goodwe",
+            config: "c2"
                 }
             ];
             
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 const n1 = helper.getNode("n1");
                 
                 // Close the node
@@ -216,16 +281,24 @@ describe("goodwe status reporting", () => {
 
         it("should update status on each operation", (done) => {
             const flow = [
-                { 
-                    id: "n1", 
-                    type: "goodwe",
-                    host: "192.168.1.100",
+        { 
+            id: "c1",
+            type: "goodwe-config",
+            host: "192.168.1.100",
+            port: 8899,
+            protocol: "udp",
+            family: "ET"
+        },
+        {
+            id: "n1",
+            type: "goodwe",
+            config: "c1",
                     wires: [["n2"]]
                 },
                 { id: "n2", type: "helper" }
             ];
             
-            helper.load(goodweNode, flow, () => {
+            helper.load([configNode, goodweNode], flow, () => {
                 const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
                 

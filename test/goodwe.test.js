@@ -4,6 +4,7 @@
 
 const helper = require("node-red-node-test-helper");
 const goodweNode = require("../nodes/goodwe.js");
+const configNode = require("../nodes/config.js");
 
 helper.init(require.resolve("node-red"));
 
@@ -20,7 +21,7 @@ describe("goodwe node", function () {
 
     it("should be loaded", function (done) {
         const flow = [{ id: "n1", type: "goodwe", name: "test goodwe" }];
-        helper.load(goodweNode, flow, function () {
+        helper.load([configNode, goodweNode], flow, function () {
             const n1 = helper.getNode("n1");
             try {
                 expect(n1).toBeDefined();
@@ -34,17 +35,21 @@ describe("goodwe node", function () {
 
     it("should have default configuration", function (done) {
         const flow = [
-            { 
-                id: "n1", 
-                type: "goodwe", 
-                name: "test goodwe",
-                host: "192.168.1.100",
-                port: 8899,
-                protocol: "udp",
-                family: "ET"
+        { 
+            id: "c5",
+            type: "goodwe-config",
+            host: "192.168.1.100",
+            port: 8899,
+            protocol: "udp",
+            family: "ET"
+        },
+        {
+            id: "n1",
+            type: "goodwe",
+            config: "c5"
             }
         ];
-        helper.load(goodweNode, flow, function () {
+        helper.load([configNode, goodweNode], flow, function () {
             const n1 = helper.getNode("n1");
             try {
                 expect(n1).toBeDefined();
@@ -61,10 +66,21 @@ describe("goodwe node", function () {
 
     it("should handle input messages", function (done) {
         const flow = [
-            { id: "n1", type: "goodwe", name: "test goodwe", host: "192.168.1.100", wires:[["n2"]] },
+        { 
+            id: "c4",
+            type: "goodwe-config",
+            host: "192.168.1.100",
+            port: 8899,
+            protocol: "udp",
+            family: "ET"
+        },
+        {
+            id: "n1",
+            type: "goodwe",
+            config: "c4", wires:[["n2"]] },
             { id: "n2", type: "helper" }
         ];
-        helper.load(goodweNode, flow, function () {
+        helper.load([configNode, goodweNode], flow, function () {
             const n2 = helper.getNode("n2");
             const n1 = helper.getNode("n1");
             n2.on("input", function (msg) {
@@ -86,10 +102,21 @@ describe("goodwe node", function () {
 
     it("should handle read command and trigger status timeout", function (done) {
         const flow = [
-            { id: "n1", type: "goodwe", name: "test goodwe", host: "192.168.1.100", wires:[["n2"]] },
+        { 
+            id: "c3",
+            type: "goodwe-config",
+            host: "192.168.1.100",
+            port: 8899,
+            protocol: "udp",
+            family: "ET"
+        },
+        {
+            id: "n1",
+            type: "goodwe",
+            config: "c3", wires:[["n2"]] },
             { id: "n2", type: "helper" }
         ];
-        helper.load(goodweNode, flow, function () {
+        helper.load([configNode, goodweNode], flow, function () {
             const n2 = helper.getNode("n2");
             const n1 = helper.getNode("n1");
             
@@ -115,10 +142,21 @@ describe("goodwe node", function () {
 
     it("should handle protocol handler status events", function (done) {
         const flow = [
-            { id: "n1", type: "goodwe", name: "test goodwe", host: "192.168.1.100", wires:[["n2"]] },
+        { 
+            id: "c2",
+            type: "goodwe-config",
+            host: "192.168.1.100",
+            port: 8899,
+            protocol: "udp",
+            family: "ET"
+        },
+        {
+            id: "n1",
+            type: "goodwe",
+            config: "c2", wires:[["n2"]] },
             { id: "n2", type: "helper" }
         ];
-        helper.load(goodweNode, flow, function () {
+        helper.load([configNode, goodweNode], flow, function () {
             const n2 = helper.getNode("n2");
             const n1 = helper.getNode("n1");
             
@@ -149,10 +187,21 @@ describe("goodwe node", function () {
 
     it("should handle protocol handler error events", function (done) {
         const flow = [
-            { id: "n1", type: "goodwe", name: "test goodwe", host: "192.168.1.100", wires:[["n2"]] },
+        { 
+            id: "c1",
+            type: "goodwe-config",
+            host: "192.168.1.100",
+            port: 8899,
+            protocol: "udp",
+            family: "ET"
+        },
+        {
+            id: "n1",
+            type: "goodwe",
+            config: "c1", wires:[["n2"]] },
             { id: "n2", type: "helper" }
         ];
-        helper.load(goodweNode, flow, function () {
+        helper.load([configNode, goodweNode], flow, function () {
             const n2 = helper.getNode("n2");
             const n1 = helper.getNode("n1");
             

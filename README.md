@@ -44,18 +44,13 @@ npm install node-red-contrib-goodwe
 
 ## Usage
 
-### Configuration Options
+### Configuration
 
-The GoodWe node supports two configuration modes:
-
-#### Option 1: Shared Configuration Node (Recommended)
-
-Use a shared configuration node when you have multiple GoodWe nodes or want to centralize connection settings.
+The GoodWe node requires a configuration node to define connection settings.
 
 1. Create a configuration node:
    - In the Node-RED editor, add a **goodwe** node to your flow
-   - In the node settings, check **"Use shared configuration node"**
-   - Click the pencil icon next to **Configuration** to create a new config node
+   - In the node settings, click the pencil icon next to **Configuration** to create a new config node
    - Configure the connection settings (host, port, protocol, family)
    - Click **Add** to save the configuration node
 
@@ -69,22 +64,9 @@ Use a shared configuration node when you have multiple GoodWe nodes or want to c
 - ✅ Easier to manage multiple inverters
 - ✅ Centralized connection lifecycle management
 
-#### Option 2: Inline Configuration
-
-Use inline configuration for simple setups with a single node.
-
-1. Drag the **goodwe** node from the palette to your flow
-2. Double-click to configure:
-   - Leave **"Use shared configuration node"** unchecked
-   - **Host**: IP address or hostname of your GoodWe inverter (e.g., `192.168.1.100`)
-   - **Protocol**: Choose UDP (port 8899) or Modbus TCP (port 502)
-   - **Port**: Communication port (default: 8899 for UDP, 502 for Modbus)
-   - **Inverter Family**: Select your inverter series (ET, EH, BT, etc.)
-3. Wire the node to an inject node for triggering reads and a debug node for output
-
 ### Configuration Node Settings
 
-When using a shared configuration node, you can configure:
+The configuration node allows you to configure:
 
 **Basic Settings:**
 - **Name**: Friendly name to identify this configuration
@@ -101,7 +83,7 @@ When using a shared configuration node, you can configure:
 
 ### Example Flows
 
-#### Example 1: Using Shared Configuration Node
+#### Example 1: Basic Usage
 
 ```json
 [
@@ -139,37 +121,7 @@ When using a shared configuration node, you can configure:
 ]
 ```
 
-#### Example 2: Inline Configuration (Legacy)
-
-```json
-[
-    {
-        "id": "inject-node",
-        "type": "inject",
-        "name": "Read inverter data",
-        "repeat": "60",
-        "payload": "read",
-        "wires": [["goodwe-node"]]
-    },
-    {
-        "id": "goodwe-node",
-        "type": "goodwe",
-        "name": "My GoodWe Inverter",
-        "host": "192.168.1.100",
-        "port": "8899",
-        "protocol": "udp",
-        "family": "ET",
-        "wires": [["debug-node"]]
-    },
-    {
-        "id": "debug-node",
-        "type": "debug",
-        "name": "Show Data"
-    }
-]
-```
-
-#### Example 3: Multiple Nodes Sharing Configuration
+#### Example 2: Multiple Nodes Sharing Configuration
 
 ```json
 [

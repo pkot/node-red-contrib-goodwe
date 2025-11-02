@@ -120,58 +120,6 @@ describe("goodwe node with config node", () => {
         });
     });
 
-    describe("using inline configuration", () => {
-        it("should work with inline configuration", (done) => {
-            const flow = [
-                { 
-                    id: "n1", 
-                    type: "goodwe",
-                    host: "192.168.1.100",
-                    port: 8899,
-                    protocol: "udp",
-                    family: "ET"
-                }
-            ];
-            
-            helper.load(goodweNode, flow, () => {
-                const n1 = helper.getNode("n1");
-                
-                try {
-                    expect(n1.host).toBe("192.168.1.100");
-                    expect(n1.port).toBe(8899);
-                    expect(n1.protocol).toBe("udp");
-                    expect(n1.family).toBe("ET");
-                    expect(n1.configNode).toBeNull();
-                    done();
-                } catch(err) {
-                    done(err);
-                }
-            });
-        });
-
-        it("should use default timeout and retries for inline config", (done) => {
-            const flow = [
-                { 
-                    id: "n1", 
-                    type: "goodwe",
-                    host: "192.168.1.100"
-                }
-            ];
-            
-            helper.load(goodweNode, flow, () => {
-                const n1 = helper.getNode("n1");
-                
-                try {
-                    expect(n1.timeout).toBe(1000);
-                    expect(n1.retries).toBe(3);
-                    done();
-                } catch(err) {
-                    done(err);
-                }
-            });
-        });
-    });
-
     describe("multiple nodes sharing config", () => {
         it("should allow multiple goodwe nodes to share one config", (done) => {
             const flow = [
@@ -208,38 +156,6 @@ describe("goodwe node with config node", () => {
                     expect(n2.configNode).toBe(c1);
                     expect(n1.host).toBe("192.168.1.100");
                     expect(n2.host).toBe("192.168.1.100");
-                    done();
-                } catch(err) {
-                    done(err);
-                }
-            });
-        });
-    });
-
-    describe("backward compatibility", () => {
-        it("should maintain backward compatibility with existing flows", (done) => {
-            const flow = [
-                { 
-                    id: "n1", 
-                    type: "goodwe",
-                    name: "Legacy Node",
-                    host: "192.168.1.100",
-                    port: 8899,
-                    protocol: "udp",
-                    family: "ET"
-                }
-            ];
-            
-            helper.load(goodweNode, flow, () => {
-                const n1 = helper.getNode("n1");
-                
-                try {
-                    expect(n1).toBeDefined();
-                    expect(n1.name).toBe("Legacy Node");
-                    expect(n1.host).toBe("192.168.1.100");
-                    expect(n1.port).toBe(8899);
-                    expect(n1.protocol).toBe("udp");
-                    expect(n1.family).toBe("ET");
                     done();
                 } catch(err) {
                     done(err);
