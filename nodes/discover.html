@@ -1,0 +1,163 @@
+<!-- GoodWe Discover Node Configuration -->
+<script type="text/javascript">
+    RED.nodes.registerType('goodwe-discover', {
+        category: 'GoodWe',
+        color: '#3FADB5',
+        defaults: {
+            name: { value: "" },
+            timeout: { 
+                value: 5000, 
+                validate: function(v) {
+                    return RED.validators.number()(v) && v >= 1000;
+                }
+            },
+            broadcastAddress: { value: "255.255.255.255" }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "bridge.png",
+        label: function() {
+            if (this.name) {
+                return this.name;
+            }
+            return "Discover";
+        },
+        labelStyle: function() {
+            return this.name ? "node_label_italic" : "";
+        },
+        oneditprepare: function() {
+            // Initialize timeout input
+            $("#node-input-timeout").val(this.timeout || 5000);
+            
+            // Initialize broadcast address input
+            $("#node-input-broadcastAddress").val(this.broadcastAddress || "255.255.255.255");
+        }
+    });
+</script>
+
+<!-- Node Configuration Template -->
+<script type="text/html" data-template-name="goodwe-discover">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    
+    <div class="form-row">
+        <label for="node-input-timeout"><i class="fa fa-clock-o"></i> Timeout</label>
+        <input type="number" id="node-input-timeout" placeholder="5000" style="width:100px" min="1000">
+        <span style="margin-left:10px">milliseconds</span>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-broadcastAddress"><i class="fa fa-wifi"></i> Broadcast</label>
+        <input type="text" id="node-input-broadcastAddress" placeholder="255.255.255.255" style="width:70%">
+    </div>
+</script>
+
+<!-- Node Help Text -->
+<script type="text/html" data-help-name="goodwe-discover">
+    <p>A dedicated Node-RED node for discovering GoodWe inverters on the local network.</p>
+    
+    <h3>Configuration</h3>
+    <dl class="message-properties">
+        <dt>Name <span class="property-type">string</span></dt>
+        <dd>Node display name (optional)</dd>
+
+        <dt>Timeout <span class="property-type">number</span></dt>
+        <dd>Discovery timeout in milliseconds. Default is 5000ms (5 seconds). Minimum is 1000ms.</dd>
+
+        <dt>Broadcast Address <span class="property-type">string</span></dt>
+        <dd>Broadcast address for discovery. Default is 255.255.255.255 (all networks). Advanced users can specify a specific broadcast address for their subnet.</dd>
+    </dl>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>payload <span class="property-type">any</span></dt>
+        <dd>Any message triggers discovery. The payload value is ignored.</dd>
+    </dl>
+
+    <h4>Input Examples</h4>
+    <p><strong>Trigger discovery:</strong></p>
+    <pre>msg.payload = true;  // or any value</pre>
+
+    <h3>Outputs</h3>
+    <dl class="message-properties">
+        <dt>payload <span class="property-type">object</span></dt>
+        <dd>Discovery results with devices array and count</dd>
+
+        <dt>topic <span class="property-type">string</span></dt>
+        <dd>Set to "goodwe/discover"</dd>
+
+        <dt>_timestamp <span class="property-type">string</span></dt>
+        <dd>ISO timestamp when discovery was performed</dd>
+    </dl>
+
+    <h4>Output Format - Devices Found</h4>
+    <pre>{
+    payload: {
+        devices: [
+            {
+                host: "192.168.1.100",
+                port: 8899,
+                model: "GW5000-EH",
+                serial: "ETxxxxxxxx",
+                family: "ET",
+                protocol: "udp"
+            }
+        ],
+        count: 1
+    },
+    topic: "goodwe/discover",
+    _timestamp: "2025-11-02T..."
+}</pre>
+
+    <h4>Output Format - No Devices Found</h4>
+    <pre>{
+    payload: {
+        devices: [],
+        count: 0
+    },
+    topic: "goodwe/discover",
+    _timestamp: "2025-11-02T..."
+}</pre>
+
+    <h3>Status Updates</h3>
+    <p>The node provides visual status feedback during discovery:</p>
+    <ul>
+        <li><strong>ready</strong> (grey) - Waiting for trigger</li>
+        <li><strong>discovering...</strong> (blue) - Discovery in progress</li>
+        <li><strong>found N</strong> (green) - Discovery completed, N devices found</li>
+        <li><strong>no devices</strong> (green) - Discovery completed, no devices found</li>
+        <li><strong>discovery failed</strong> (red) - Discovery error occurred</li>
+    </ul>
+    <p>Status automatically resets to "ready" after 2 seconds.</p>
+
+    <h3>Use Cases</h3>
+    <ul>
+        <li><strong>Initial Setup</strong> - Help users find their inverter's IP address</li>
+        <li><strong>Network Changes</strong> - Rediscover after DHCP IP changes</li>
+        <li><strong>Multi-Inverter</strong> - Find all inverters on the network</li>
+        <li><strong>Diagnostics</strong> - Verify inverter is reachable on the network</li>
+    </ul>
+
+    <h3>Integration Example</h3>
+    <p>Extract first discovered device and use it to configure a connection:</p>
+    <pre>// In a function node after discover:
+if (msg.payload.devices.length > 0) {
+    msg.payload = msg.payload.devices[0];
+    return msg;
+}</pre>
+
+    <h3>Details</h3>
+    <p>This node uses UDP broadcast on port 8899 to discover GoodWe inverters on the local network.
+    The discovery process sends a broadcast packet and listens for responses during the timeout period.</p>
+    
+    <p><strong>Note:</strong> Network firewalls or router configurations may block UDP broadcasts.
+    Ensure UDP port 8899 is not blocked on your network.</p>
+
+    <h3>References</h3>
+    <ul>
+        <li><a href="https://github.com/marcelblijleven/goodwe">marcelblijleven/goodwe Python library</a></li>
+        <li><a href="https://github.com/pkot/node-red-contrib-goodwe">node-red-contrib-goodwe GitHub repository</a></li>
+    </ul>
+</script>
