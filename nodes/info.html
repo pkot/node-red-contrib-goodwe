@@ -1,0 +1,114 @@
+<!-- GoodWe Info Node Configuration -->
+<script type="text/javascript">
+    RED.nodes.registerType('goodwe-info', {
+        category: 'GoodWe',
+        color: '#3FADB5',
+        defaults: {
+            name: { value: "" },
+            config: { value: "", type: "goodwe-config", required: true }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "bridge.png",
+        label: function() {
+            if (this.name) {
+                return this.name;
+            }
+            return "Info";
+        },
+        labelStyle: function() {
+            return this.name ? "node_label_italic" : "";
+        }
+    });
+</script>
+
+<!-- Node Configuration Template -->
+<script type="text/html" data-template-name="goodwe-info">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-config"><i class="fa fa-cog"></i> Config</label>
+        <input type="text" id="node-input-config">
+    </div>
+</script>
+
+<!-- Node Help Text -->
+<script type="text/html" data-help-name="goodwe-info">
+    <p>Retrieves device identification and firmware information from a GoodWe inverter.</p>
+
+    <h3>Configuration</h3>
+    <dl class="message-properties">
+        <dt>Name <span class="property-type">string</span></dt>
+        <dd>Node display name (optional)</dd>
+
+        <dt>Config <span class="property-type">goodwe-config</span></dt>
+        <dd>Reference to the GoodWe configuration node (required)</dd>
+    </dl>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>payload <span class="property-type">any</span></dt>
+        <dd>Any message triggers device info retrieval. The payload value is ignored.</dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <dl class="message-properties">
+        <dt>payload <span class="property-type">object</span></dt>
+        <dd>Device information including model, serial, firmware versions</dd>
+
+        <dt>topic <span class="property-type">string</span></dt>
+        <dd>Set to "goodwe/device_info"</dd>
+
+        <dt>_timestamp <span class="property-type">string</span></dt>
+        <dd>ISO timestamp when info was retrieved</dd>
+
+        <dt>_inverter <span class="property-type">object</span></dt>
+        <dd>Inverter family and host address</dd>
+    </dl>
+
+    <h4>Output Format</h4>
+    <pre>{
+    payload: {
+        model_name: "GW5000-EH",
+        serial_number: "ETxxxxxxxx",
+        rated_power: 5000,
+        firmware: "V1.2.3",
+        arm_firmware: "V2.0.1",
+        dsp1_version: "V1.0.0",
+        dsp2_version: "V1.0.0",
+        ac_output_type: 0,
+        family: "ET"
+    },
+    topic: "goodwe/device_info",
+    _timestamp: "2025-11-02T...",
+    _inverter: {
+        family: "ET",
+        host: "192.168.1.100"
+    }
+}</pre>
+
+    <h3>Status Updates</h3>
+    <ul>
+        <li><strong>ready</strong> (grey) - Waiting for trigger</li>
+        <li><strong>reading info...</strong> (blue) - Retrieval in progress</li>
+        <li><strong>ok</strong> (green) - Successful read (resets after 2s)</li>
+        <li><strong>error</strong> (red) - Read failed</li>
+    </ul>
+
+    <h3>Use Cases</h3>
+    <ul>
+        <li><strong>Initial Setup</strong> - Verify connected to the correct inverter</li>
+        <li><strong>Diagnostics</strong> - Check firmware versions for updates</li>
+        <li><strong>Documentation</strong> - Record inverter details</li>
+        <li><strong>Multi-Inverter</strong> - Identify which inverter in system</li>
+    </ul>
+
+    <h3>References</h3>
+    <ul>
+        <li><a href="https://github.com/marcelblijleven/goodwe">marcelblijleven/goodwe Python library</a></li>
+        <li><a href="https://github.com/pkot/node-red-contrib-goodwe">node-red-contrib-goodwe GitHub repository</a></li>
+    </ul>
+</script>
