@@ -1,6 +1,6 @@
 /**
  * Tests for GoodWe Read Node
- * 
+ *
  * These tests validate:
  * - Read node creation and configuration
  * - Flat output format (default)
@@ -13,14 +13,60 @@
  */
 
 const helper = require("node-red-node-test-helper");
-const readNode = require("../nodes/read.js");
 const configNode = require("../nodes/config.js");
 
 helper.init(require.resolve("node-red"));
 
+/**
+ * Mock runtime data matching ET family sensors.
+ * Deterministic values for predictable test assertions.
+ */
+const MOCK_ET_RUNTIME_DATA = {
+    vpv1: 245.5,
+    vpv2: 242.3,
+    ipv1: 8.2,
+    ipv2: 7.9,
+    ppv1: 2013,
+    ppv2: 1914,
+    vgrid: 230.1,
+    igrid: 6.2,
+    fgrid: 50.01,
+    total_inverter_power: 2875,
+    temperature: 42.5,
+    work_mode: 1,
+    e_day: 12.5,
+    e_total: 1234.5,
+    h_total: 2468,
+    vbattery1: 51.2,
+    ibattery1: -5.0,
+    pbattery1: -256,
+    battery_mode: 1
+};
+
+/**
+ * Mock ProtocolHandler that returns deterministic data.
+ * We mock the module at require-time so the read node picks it up.
+ */
+const mockReadRuntimeData = jest.fn().mockResolvedValue(MOCK_ET_RUNTIME_DATA);
+const mockDisconnect = jest.fn().mockResolvedValue(undefined);
+
+jest.mock("../lib/protocol.js", () => ({
+    ProtocolHandler: jest.fn().mockImplementation(() => ({
+        readRuntimeData: mockReadRuntimeData,
+        disconnect: mockDisconnect,
+        on: jest.fn()
+    }))
+}));
+
+// Must require after jest.mock
+const readNode = require("../nodes/read.js");
+
 describe("GoodWe Read Node", function () {
-    
+
     beforeEach(function (done) {
+        mockReadRuntimeData.mockClear();
+        mockReadRuntimeData.mockResolvedValue(MOCK_ET_RUNTIME_DATA);
+        mockDisconnect.mockClear();
         helper.startServer(done);
     });
 
@@ -61,7 +107,7 @@ describe("GoodWe Read Node", function () {
     }
 
     describe("Node Creation", function () {
-        
+
         it("should be loaded", function (done) {
             const flow = createReadFlow();
 
@@ -117,7 +163,7 @@ describe("GoodWe Read Node", function () {
     });
 
     describe("Flat Output Format", function () {
-        
+
         it("should output flat format by default", function (done) {
             const flow = createReadFlow({ outputFormat: "flat" });
 
@@ -130,12 +176,12 @@ describe("GoodWe Read Node", function () {
                         expect(msg.payload).toBeDefined();
                         expect(typeof msg.payload).toBe("object");
                         expect(Array.isArray(msg.payload)).toBe(false);
-                        
+
                         // Should have sensor values directly in payload
-                        expect(msg.payload.vpv1).toBeDefined();
-                        expect(msg.payload.ipv1).toBeDefined();
-                        expect(msg.payload.total_inverter_power).toBeDefined();
-                        
+                        expect(msg.payload.vpv1).toBe(245.5);
+                        expect(msg.payload.ipv1).toBe(8.2);
+                        expect(msg.payload.total_inverter_power).toBe(2875);
+
                         done();
                     } catch (err) {
                         done(err);
@@ -187,7 +233,7 @@ describe("GoodWe Read Node", function () {
                     }
                 });
 
-                n1.receive({ 
+                n1.receive({
                     payload: true,
                     customProperty: "test value",
                     anotherProperty: 123
@@ -197,7 +243,7 @@ describe("GoodWe Read Node", function () {
     });
 
     describe("Categorized Output Format", function () {
-        
+
         it("should output categorized format", function (done) {
             const flow = createReadFlow({ outputFormat: "categorized" });
 
@@ -209,19 +255,19 @@ describe("GoodWe Read Node", function () {
                     try {
                         expect(msg.payload).toBeDefined();
                         expect(typeof msg.payload).toBe("object");
-                        
+
                         // Should have categories
                         expect(msg.payload.pv).toBeDefined();
                         expect(msg.payload.grid).toBeDefined();
 
                         // PV category should have PV sensors
-                        expect(msg.payload.pv.vpv1).toBeDefined();
-                        expect(msg.payload.pv.ipv1).toBeDefined();
+                        expect(msg.payload.pv.vpv1).toBe(245.5);
+                        expect(msg.payload.pv.ipv1).toBe(8.2);
 
                         // Grid category should have grid sensors
-                        expect(msg.payload.grid.vgrid).toBeDefined();
-                        expect(msg.payload.grid.total_inverter_power).toBeDefined();
-                        
+                        expect(msg.payload.grid.vgrid).toBe(230.1);
+                        expect(msg.payload.grid.total_inverter_power).toBe(2875);
+
                         done();
                     } catch (err) {
                         done(err);
@@ -233,7 +279,7 @@ describe("GoodWe Read Node", function () {
         });
 
         it("should include battery category for ET family", function (done) {
-            const flow = createReadFlow({ 
+            const flow = createReadFlow({
                 outputFormat: "categorized",
                 family: "ET"
             });
@@ -245,8 +291,8 @@ describe("GoodWe Read Node", function () {
                 n2.on("input", function (msg) {
                     try {
                         expect(msg.payload.battery).toBeDefined();
-                        expect(msg.payload.battery.vbattery1).toBeDefined();
-                        expect(msg.payload.battery.ibattery1).toBeDefined();
+                        expect(msg.payload.battery.vbattery1).toBe(51.2);
+                        expect(msg.payload.battery.ibattery1).toBe(-5.0);
                         done();
                     } catch (err) {
                         done(err);
@@ -282,7 +328,7 @@ describe("GoodWe Read Node", function () {
     });
 
     describe("Array Output Format", function () {
-        
+
         it("should output array format with metadata", function (done) {
             const flow = createReadFlow({ outputFormat: "array" });
 
@@ -295,7 +341,7 @@ describe("GoodWe Read Node", function () {
                         expect(msg.payload).toBeDefined();
                         expect(Array.isArray(msg.payload)).toBe(true);
                         expect(msg.payload.length).toBeGreaterThan(0);
-                        
+
                         // Each item should have required fields
                         msg.payload.forEach(item => {
                             expect(item.id).toBeDefined();
@@ -304,7 +350,7 @@ describe("GoodWe Read Node", function () {
                             expect(item.unit).toBeDefined();
                             expect(item.kind).toBeDefined();
                         });
-                        
+
                         done();
                     } catch (err) {
                         done(err);
@@ -330,15 +376,8 @@ describe("GoodWe Read Node", function () {
                         expect(vpv1.name).toBe("PV1 Voltage");
                         expect(vpv1.unit).toBe("V");
                         expect(vpv1.kind).toBe("PV");
-                        
-                        // Find battery_soc sensor
-                        const batterySoc = msg.payload.find(item => item.id === "battery_soc");
-                        if (batterySoc) {
-                            expect(batterySoc.name).toBe("Battery SoC");
-                            expect(batterySoc.unit).toBe("%");
-                            expect(batterySoc.kind).toBe("BAT");
-                        }
-                        
+                        expect(vpv1.value).toBe(245.5);
+
                         done();
                     } catch (err) {
                         done(err);
@@ -351,7 +390,7 @@ describe("GoodWe Read Node", function () {
     });
 
     describe("Sensor Filtering", function () {
-        
+
         it("should filter single sensor", function (done) {
             const flow = createReadFlow({ outputFormat: "flat" });
 
@@ -362,11 +401,11 @@ describe("GoodWe Read Node", function () {
                 n2.on("input", function (msg) {
                     try {
                         expect(msg.payload).toBeDefined();
-                        expect(msg.payload.vpv1).toBeDefined();
-                        
+                        expect(msg.payload.vpv1).toBe(245.5);
+
                         // Should only have one sensor
                         expect(Object.keys(msg.payload).length).toBe(1);
-                        
+
                         done();
                     } catch (err) {
                         done(err);
@@ -387,9 +426,9 @@ describe("GoodWe Read Node", function () {
                 n2.on("input", function (msg) {
                     try {
                         expect(msg.payload).toBeDefined();
-                        expect(msg.payload.vpv1).toBeDefined();
-                        expect(msg.payload.vpv2).toBeDefined();
-                        expect(msg.payload.vbattery1).toBeDefined();
+                        expect(msg.payload.vpv1).toBe(245.5);
+                        expect(msg.payload.vpv2).toBe(242.3);
+                        expect(msg.payload.vbattery1).toBe(51.2);
 
                         // Should only have three sensors
                         expect(Object.keys(msg.payload).length).toBe(3);
@@ -415,13 +454,13 @@ describe("GoodWe Read Node", function () {
                     try {
                         expect(msg.payload).toBeDefined();
                         expect(msg.payload.pv).toBeDefined();
-                        expect(msg.payload.pv.vpv1).toBeDefined();
-                        expect(msg.payload.pv.vpv2).toBeDefined();
-                        
+                        expect(msg.payload.pv.vpv1).toBe(245.5);
+                        expect(msg.payload.pv.vpv2).toBe(242.3);
+
                         // Should only have pv category with two sensors
                         expect(Object.keys(msg.payload)).toEqual(["pv"]);
                         expect(Object.keys(msg.payload.pv).length).toBe(2);
-                        
+
                         done();
                     } catch (err) {
                         done(err);
@@ -462,12 +501,11 @@ describe("GoodWe Read Node", function () {
     });
 
     describe("Auto-Polling", function () {
-        
+
         it("should not poll when polling is 0", function (done) {
             const flow = createReadFlow({ polling: 0 });
 
             helper.load([configNode, readNode], flow, function () {
-                const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 
                 let messageCount = 0;
@@ -491,7 +529,6 @@ describe("GoodWe Read Node", function () {
             const flow = createReadFlow({ polling: 1 }); // 1 second
 
             helper.load([configNode, readNode], flow, function () {
-                const n1 = helper.getNode("n1");
                 const n2 = helper.getNode("n2");
 
                 let messageCount = 0;
@@ -526,7 +563,7 @@ describe("GoodWe Read Node", function () {
                 // Wait 1.5 seconds, then close the node
                 setTimeout(() => {
                     const countBeforeClose = messageCount;
-                    
+
                     // Close the node
                     n1.close().then(() => {
                         // Wait another 1.5 seconds
@@ -545,7 +582,7 @@ describe("GoodWe Read Node", function () {
         });
 
         it("should output correct format during polling", function (done) {
-            const flow = createReadFlow({ 
+            const flow = createReadFlow({
                 polling: 1,
                 outputFormat: "categorized"
             });
@@ -569,9 +606,26 @@ describe("GoodWe Read Node", function () {
     });
 
     describe("Error Handling", function () {
-        
+
+        it("should handle read errors gracefully", function (done) {
+            mockReadRuntimeData.mockRejectedValueOnce(new Error("Connection timeout"));
+            const flow = createReadFlow();
+
+            helper.load([configNode, readNode], flow, function () {
+                const n1 = helper.getNode("n1");
+
+                // Should not throw
+                n1.receive({ payload: true });
+
+                // Give it a moment to process
+                setTimeout(() => {
+                    done();
+                }, 100);
+            });
+        });
+
         it("should handle invalid host gracefully", function (done) {
-            const flow = createReadFlow({ host: "invalid" });
+            const flow = createReadFlow({ host: "" });
 
             helper.load([configNode, readNode], flow, function () {
                 const n1 = helper.getNode("n1");
