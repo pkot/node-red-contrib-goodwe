@@ -6,7 +6,7 @@
  */
 
 const { ProtocolHandler } = require("../lib/protocol.js");
-const { generateMockRuntimeData, getSensorMetadata } = require("../lib/node-helpers.js");
+const { getSensorMetadata } = require("../lib/node-helpers.js");
 
 module.exports = function(RED) {
     "use strict";
@@ -168,43 +168,32 @@ module.exports = function(RED) {
                     throw new Error("Invalid host address");
                 }
 
-                // Check if we should use mock data (for testing)
-                const useMockData = process.env.NODE_ENV === "test" || 
-                                   node.host === "192.168.1.100" || 
-                                   node.host === "192.168.1.101";
+                // Initialize protocol handler if not exists
+                if (!node.protocolHandler) {
+                    node.protocolHandler = new ProtocolHandler({
+                        host: node.host,
+                        port: node.port,
+                        protocol: node.protocol,
+                        family: node.family,
+                        timeout: node.timeout || 1000,
+                        retries: node.retries || 3
+                    });
 
-                let runtimeData;
+                    // Setup status event handlers
+                    node.protocolHandler.on("status", (status) => {
+                        updateNodeStatus(node, status);
+                    });
 
-                if (useMockData) {
-                    // Use mock data for testing
-                    runtimeData = generateMockRuntimeData(node.family);
-                } else {
-                    // Initialize protocol handler if not exists
-                    if (!node.protocolHandler) {
-                        node.protocolHandler = new ProtocolHandler({
-                            host: node.host,
-                            port: node.port,
-                            protocol: node.protocol,
-                            timeout: node.timeout || 1000,
-                            retries: node.retries || 3
-                        });
-
-                        // Setup status event handlers
-                        node.protocolHandler.on("status", (status) => {
-                            updateNodeStatus(node, status);
-                        });
-
-                        node.protocolHandler.on("error", (err) => {
-                            node.warn(`Protocol error: ${err.message}`);
-                        });
-                    }
-
-                    // Update status
-                    node.status({ fill: "blue", shape: "dot", text: "reading..." });
-
-                    // Read runtime data from inverter
-                    runtimeData = await node.protocolHandler.readRuntimeData();
+                    node.protocolHandler.on("error", (err) => {
+                        node.warn(`Protocol error: ${err.message}`);
+                    });
                 }
+
+                // Update status
+                node.status({ fill: "blue", shape: "dot", text: "reading..." });
+
+                // Read runtime data from inverter
+                const runtimeData = await node.protocolHandler.readRuntimeData();
                 
                 // Parse sensor filter from input message
                 let sensorFilter = null;
