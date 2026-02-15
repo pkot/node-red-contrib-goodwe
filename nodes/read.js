@@ -6,7 +6,7 @@
  */
 
 const { ProtocolHandler } = require("../lib/protocol.js");
-const { generateMockRuntimeData, SENSOR_METADATA } = require("../lib/node-helpers.js");
+const { generateMockRuntimeData, getSensorMetadata } = require("../lib/node-helpers.js");
 
 module.exports = function(RED) {
     "use strict";
@@ -18,7 +18,7 @@ module.exports = function(RED) {
      * @param {Array} sensorFilter - Optional list of sensor IDs to include
      * @returns {Object|Array} Formatted data
      */
-    function formatRuntimeData(data, format, sensorFilter) {
+    function formatRuntimeData(data, format, sensorFilter, family) {
         // Filter sensors if requested
         let filteredData = data;
         if (sensorFilter && sensorFilter.length > 0) {
@@ -30,11 +30,14 @@ module.exports = function(RED) {
             });
         }
 
+        // Get family-aware metadata
+        const sensorMetadata = getSensorMetadata(family || "ET");
+
         switch (format) {
         case "categorized":
-            return formatCategorized(filteredData);
+            return formatCategorized(filteredData, sensorMetadata);
         case "array":
-            return formatArray(filteredData);
+            return formatArray(filteredData, sensorMetadata);
         case "flat":
         default:
             return filteredData;
@@ -46,18 +49,21 @@ module.exports = function(RED) {
      * @param {Object} data - Runtime data
      * @returns {Object} Categorized data
      */
-    function formatCategorized(data) {
+    function formatCategorized(data, sensorMetadata) {
         const categorized = {
             pv: {},
             battery: {},
             grid: {},
-            energy: {},
+            ups: {},
             status: {}
         };
 
         Object.keys(data).forEach(key => {
-            const metadata = SENSOR_METADATA[key];
+            const metadata = sensorMetadata[key];
             if (metadata && metadata.category) {
+                if (!categorized[metadata.category]) {
+                    categorized[metadata.category] = {};
+                }
                 categorized[metadata.category][key] = data[key];
             } else {
                 // If no metadata, put in status category
@@ -80,11 +86,11 @@ module.exports = function(RED) {
      * @param {Object} data - Runtime data
      * @returns {Array} Array of sensor objects with metadata
      */
-    function formatArray(data) {
+    function formatArray(data, sensorMetadata) {
         const array = [];
 
         Object.keys(data).forEach(key => {
-            const metadata = SENSOR_METADATA[key];
+            const metadata = sensorMetadata[key];
             const item = {
                 id: key,
                 value: data[key]
@@ -213,7 +219,7 @@ module.exports = function(RED) {
                 }
 
                 // Format the data based on output format
-                const formattedData = formatRuntimeData(runtimeData, node.outputFormat, sensorFilter);
+                const formattedData = formatRuntimeData(runtimeData, node.outputFormat, sensorFilter, node.family);
 
                 // Preserve original message properties (except payload)
                 const outputMsg = Object.assign({}, msg);
