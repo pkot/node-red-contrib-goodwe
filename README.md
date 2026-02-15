@@ -69,8 +69,10 @@ The GoodWe node requires a configuration node to define connection settings.
 This package provides the following Node-RED nodes:
 
 - **goodwe-config** - Configuration node for inverter connection settings (shared across other nodes)
-- **goodwe-read** - Dedicated node for reading runtime sensor data with multiple output formats
-- **goodwe** - Unified node for read, write, and discovery operations (legacy)
+- **goodwe-read** - Read runtime sensor data with multiple output formats and auto-polling
+- **goodwe-info** - Retrieve device identification and firmware information
+- **goodwe-discover** - Discover GoodWe inverters on the local network via UDP broadcast
+- **goodwe** - Legacy unified node (deprecated, use the dedicated nodes above)
 
 ### Configuration Node Settings
 
@@ -116,7 +118,7 @@ msg.payload = { sensor_id: "vpv1" };
 
 Read multiple sensors:
 ```javascript
-msg.payload = { sensors: ["vpv1", "vpv2", "battery_soc"] };
+msg.payload = { sensors: ["vpv1", "vpv2", "vbattery1"] };
 ```
 
 **Output Examples:**
@@ -140,10 +142,10 @@ Categorized format:
 ```javascript
 {
     payload: {
-        pv: { vpv1: 245.5, ipv1: 6.2, ppv1: 1522 },
-        battery: { vbattery1: 51.2, battery_soc: 87 },
-        grid: { vac1: 230.5, iac1: 12.4, pac: 2875 },
-        energy: { e_day: 15.2, e_total: 4523.8 }
+        pv: { vpv1: 245.5, ipv1: 6.2, ppv1: 1522, e_day: 15.2, e_total: 4523.8 },
+        battery: { vbattery1: 51.2, ibattery1: -5.0, pbattery1: -256 },
+        grid: { vgrid: 230.5, igrid: 12.4, total_inverter_power: 2875 },
+        status: { temperature: 42.5, work_mode: 1 }
     },
     topic: "goodwe/runtime_data",
     // ... metadata
@@ -155,7 +157,7 @@ Array format (with metadata):
 {
     payload: [
         { id: "vpv1", name: "PV1 Voltage", value: 245.5, unit: "V", kind: "PV" },
-        { id: "battery_soc", name: "Battery SoC", value: 87, unit: "%", kind: "BAT" }
+        { id: "vbattery1", name: "Battery Voltage", value: 51.2, unit: "V", kind: "BAT" }
         // ... all sensors
     ],
     topic: "goodwe/runtime_data",
@@ -167,6 +169,86 @@ Array format (with metadata):
 - **Flat Format**: Simple dashboards, direct sensor access
 - **Categorized Format**: Organized displays, grouped gauges
 - **Array Format**: Dynamic UIs, tables, charts with metadata
+
+### Info Node (goodwe-info)
+
+The info node retrieves device identification and firmware information from the inverter.
+
+**Node Settings:**
+- **Name**: Node display name
+- **Configuration**: Reference to a goodwe-config node (required)
+
+**Input:** Any message triggers device info retrieval.
+
+**Output:**
+```javascript
+{
+    payload: {
+        model_name: "GW5000-EH",
+        serial_number: "95027EST123A0001",
+        firmware: "V2.01",
+        arm_firmware: "V2.01",
+        dsp1_version: "V1.14",
+        dsp2_version: "V1.14",
+        rated_power: 5000,
+        ac_output_type: 0,
+        family: "ET"
+    },
+    topic: "goodwe/device_info",
+    _timestamp: "2025-11-02T...",
+    _inverter: { family: "ET", host: "192.168.1.100" }
+}
+```
+
+### Discover Node (goodwe-discover)
+
+The discover node finds GoodWe inverters on the local network using UDP broadcast.
+
+**Node Settings:**
+- **Name**: Node display name
+- **Timeout**: Discovery timeout in milliseconds (default: 5000)
+- **Broadcast Address**: Network broadcast address (default: 255.255.255.255)
+
+**Input:** Any message triggers discovery.
+
+**Output:**
+```javascript
+{
+    payload: {
+        devices: [
+            {
+                host: "192.168.1.100",
+                port: 8899,
+                model: "GW5000-EH",
+                serial: "ETxxxxxxxx",
+                family: "ET",
+                protocol: "udp"
+            }
+        ],
+        count: 1
+    },
+    topic: "goodwe/discover",
+    _timestamp: "2025-11-02T..."
+}
+```
+
+### Error Handling
+
+All nodes provide enhanced error messages with actionable suggestions:
+
+```javascript
+{
+    message: "Response timeout",
+    code: "TIMEOUT",
+    details: { host: "192.168.1.100", port: 8899, protocol: "udp", family: "ET" },
+    suggestions: [
+        "Verify inverter at 192.168.1.100 is powered on",
+        "Check network connection to inverter",
+        "Ensure inverter is on the same network segment",
+        "Try increasing timeout above 1000ms in configuration"
+    ]
+}
+```
 
 ### Example Flows
 
@@ -437,19 +519,25 @@ See the **[Testing Guide](./docs/TESTING.md)** for comprehensive testing documen
 
 ```
 node-red-contrib-goodwe/
-├── nodes/              # Node implementation
-│   ├── goodwe.js      # Main node runtime logic
-│   ├── goodwe.html    # Main node UI and help
-│   ├── config.js      # Configuration node logic
-│   ├── config.html    # Configuration node UI and help
+├── nodes/              # Node implementations
+│   ├── config.js      # Configuration node (shared connection)
+│   ├── config.html    # Configuration node UI
+│   ├── read.js        # Read runtime sensor data
+│   ├── read.html      # Read node UI
+│   ├── info.js        # Device info retrieval
+│   ├── info.html      # Info node UI
+│   ├── discover.js    # Network discovery
+│   ├── discover.html  # Discover node UI
+│   ├── goodwe.js      # Legacy unified node
+│   ├── goodwe.html    # Legacy node UI
 │   └── icons/         # Node icons
 ├── lib/               # Shared libraries
-│   └── protocol.js    # Protocol handlers
-├── test/              # Test files
-│   ├── goodwe.test.js
-│   ├── config-node.test.js
-│   ├── config-integration.test.js
-│   └── ...
+│   ├── protocol.js    # Protocol handler (UDP/TCP/Modbus)
+│   ├── sensors.js     # Per-family sensor definitions and parsers
+│   ├── modbus.js      # Modbus RTU/TCP frame construction
+│   ├── errors.js      # Enhanced error messages with suggestions
+│   └── node-helpers.js # Shared node utilities
+├── test/              # Test files (372+ tests)
 ├── examples/          # Example flows
 ├── docs/              # Documentation
 ├── .github/           # CI/CD workflows
@@ -508,4 +596,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Status
 
-⚠️ **Note**: This project is currently under active development. Core features are being implemented. See the [implementation plan issue](https://github.com/pkot/node-red-contrib-goodwe/issues) for progress tracking.
+This project implements the core v1.0 feature set. See [TODO.md](./TODO.md) for completed phases and the post-v1.0 roadmap.

@@ -3,6 +3,7 @@ module.exports = {
     coverageDirectory: "coverage",
     collectCoverageFrom: [
         "nodes/**/*.js",
+        "lib/**/*.js",
         "!nodes/**/*.spec.js"
     ],
     testMatch: [
