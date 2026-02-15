@@ -420,22 +420,128 @@ describe("goodwe-config node", () => {
         });
     });
 
-    describe("connection state", () => {
-        it("should initialize with disconnected state", (done) => {
+    describe("connection management", () => {
+        it("should initialize with no protocol handler", (done) => {
             const flow = [
-                { 
-                    id: "c1", 
+                {
+                    id: "c1",
                     type: "goodwe-config",
                     host: "192.168.1.100"
                 }
             ];
-            
+
             helper.load(configNode, flow, () => {
                 const c1 = helper.getNode("c1");
                 try {
-                    expect(c1.isConnected).toBe(false);
-                    expect(c1.connection).toBeNull();
+                    expect(c1.protocolHandler).toBeNull();
+                    expect(c1.users).toEqual([]);
                     done();
+                } catch(err) {
+                    done(err);
+                }
+            });
+        });
+
+        it("should have getProtocolHandler method", (done) => {
+            const flow = [
+                {
+                    id: "c1",
+                    type: "goodwe-config",
+                    host: "192.168.1.100"
+                }
+            ];
+
+            helper.load(configNode, flow, () => {
+                const c1 = helper.getNode("c1");
+                try {
+                    expect(typeof c1.getProtocolHandler).toBe("function");
+                    done();
+                } catch(err) {
+                    done(err);
+                }
+            });
+        });
+
+        it("should return same handler instance on repeated calls", (done) => {
+            const flow = [
+                {
+                    id: "c1",
+                    type: "goodwe-config",
+                    host: "192.168.1.100"
+                }
+            ];
+
+            helper.load(configNode, flow, () => {
+                const c1 = helper.getNode("c1");
+                try {
+                    const handler1 = c1.getProtocolHandler();
+                    const handler2 = c1.getProtocolHandler();
+                    expect(handler1).toBe(handler2);
+                    done();
+                } catch(err) {
+                    done(err);
+                }
+            });
+        });
+
+        it("should track registered users", (done) => {
+            const flow = [
+                {
+                    id: "c1",
+                    type: "goodwe-config",
+                    host: "192.168.1.100"
+                }
+            ];
+
+            helper.load(configNode, flow, () => {
+                const c1 = helper.getNode("c1");
+                try {
+                    const mockNode1 = { id: "n1" };
+                    const mockNode2 = { id: "n2" };
+
+                    c1.registerUser(mockNode1);
+                    expect(c1.users.length).toBe(1);
+
+                    c1.registerUser(mockNode2);
+                    expect(c1.users.length).toBe(2);
+
+                    c1.deregisterUser(mockNode1);
+                    expect(c1.users.length).toBe(1);
+                    expect(c1.users[0].id).toBe("n2");
+
+                    c1.deregisterUser(mockNode2);
+                    expect(c1.users.length).toBe(0);
+
+                    done();
+                } catch(err) {
+                    done(err);
+                }
+            });
+        });
+
+        it("should disconnect handler on close", (done) => {
+            const flow = [
+                {
+                    id: "c1",
+                    type: "goodwe-config",
+                    host: "192.168.1.100"
+                }
+            ];
+
+            helper.load(configNode, flow, () => {
+                const c1 = helper.getNode("c1");
+                try {
+                    // Create a handler
+                    const handler = c1.getProtocolHandler();
+                    expect(handler).toBeDefined();
+                    expect(c1.protocolHandler).not.toBeNull();
+
+                    // Close the node
+                    c1.close().then(() => {
+                        expect(c1.protocolHandler).toBeNull();
+                        expect(c1.users).toEqual([]);
+                        done();
+                    });
                 } catch(err) {
                     done(err);
                 }
