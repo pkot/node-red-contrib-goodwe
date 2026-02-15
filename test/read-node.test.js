@@ -134,7 +134,7 @@ describe("GoodWe Read Node", function () {
                         // Should have sensor values directly in payload
                         expect(msg.payload.vpv1).toBeDefined();
                         expect(msg.payload.ipv1).toBeDefined();
-                        expect(msg.payload.pac).toBeDefined();
+                        expect(msg.payload.total_inverter_power).toBeDefined();
                         
                         done();
                     } catch (err) {
@@ -213,15 +213,14 @@ describe("GoodWe Read Node", function () {
                         // Should have categories
                         expect(msg.payload.pv).toBeDefined();
                         expect(msg.payload.grid).toBeDefined();
-                        expect(msg.payload.energy).toBeDefined();
-                        
+
                         // PV category should have PV sensors
                         expect(msg.payload.pv.vpv1).toBeDefined();
                         expect(msg.payload.pv.ipv1).toBeDefined();
-                        
+
                         // Grid category should have grid sensors
-                        expect(msg.payload.grid.vac1).toBeDefined();
-                        expect(msg.payload.grid.pac).toBeDefined();
+                        expect(msg.payload.grid.vgrid).toBeDefined();
+                        expect(msg.payload.grid.total_inverter_power).toBeDefined();
                         
                         done();
                     } catch (err) {
@@ -247,7 +246,7 @@ describe("GoodWe Read Node", function () {
                     try {
                         expect(msg.payload.battery).toBeDefined();
                         expect(msg.payload.battery.vbattery1).toBeDefined();
-                        expect(msg.payload.battery.battery_soc).toBeDefined();
+                        expect(msg.payload.battery.ibattery1).toBeDefined();
                         done();
                     } catch (err) {
                         done(err);
@@ -390,18 +389,18 @@ describe("GoodWe Read Node", function () {
                         expect(msg.payload).toBeDefined();
                         expect(msg.payload.vpv1).toBeDefined();
                         expect(msg.payload.vpv2).toBeDefined();
-                        expect(msg.payload.battery_soc).toBeDefined();
-                        
+                        expect(msg.payload.vbattery1).toBeDefined();
+
                         // Should only have three sensors
                         expect(Object.keys(msg.payload).length).toBe(3);
-                        
+
                         done();
                     } catch (err) {
                         done(err);
                     }
                 });
 
-                n1.receive({ payload: { sensors: ["vpv1", "vpv2", "battery_soc"] } });
+                n1.receive({ payload: { sensors: ["vpv1", "vpv2", "vbattery1"] } });
             });
         });
 
@@ -445,19 +444,19 @@ describe("GoodWe Read Node", function () {
                         expect(msg.payload).toBeDefined();
                         expect(Array.isArray(msg.payload)).toBe(true);
                         expect(msg.payload.length).toBe(2);
-                        
-                        // Should have vpv1 and battery_soc
+
+                        // Should have vpv1 and vbattery1
                         const ids = msg.payload.map(item => item.id);
                         expect(ids).toContain("vpv1");
-                        expect(ids).toContain("battery_soc");
-                        
+                        expect(ids).toContain("vbattery1");
+
                         done();
                     } catch (err) {
                         done(err);
                     }
                 });
 
-                n1.receive({ payload: { sensors: ["vpv1", "battery_soc"] } });
+                n1.receive({ payload: { sensors: ["vpv1", "vbattery1"] } });
             });
         });
     });
