@@ -1,11 +1,10 @@
 /**
  * Node-RED node for GoodWe inverter read operations
- * 
+ *
  * This node provides dedicated read functionality for GoodWe inverters
  * with support for multiple output formats and auto-polling.
  */
 
-const { ProtocolHandler } = require("../lib/protocol.js");
 const { getSensorMetadata } = require("../lib/node-helpers.js");
 
 module.exports = function(RED) {
@@ -128,7 +127,7 @@ module.exports = function(RED) {
             node.status({ fill: "red", shape: "ring", text: "config error" });
             return;
         }
-        
+
         // Get config from configuration node
         const cfg = configSource.getConfig();
         node.host = cfg.host;
@@ -139,21 +138,30 @@ module.exports = function(RED) {
         node.retries = cfg.retries;
         node.configNode = configSource;
 
+        // Register with config node for event forwarding
+        node.configNode.registerUser(node);
+
         // Node properties
         node.outputFormat = config.outputFormat || "flat";
         node.polling = parseInt(config.polling) || 0;
 
-        // Initialize protocol handler
-        node.protocolHandler = null;
-        
         // Polling interval ID
         node.pollingInterval = null;
-        
+
         // Flag to prevent concurrent reads during polling
         node.isReading = false;
 
         // Initialize status
         node.status({ fill: "grey", shape: "ring", text: "ready" });
+
+        // Listen for status events forwarded from config node
+        node.on("goodwe:status", function(status) {
+            updateNodeStatus(node, status);
+        });
+
+        node.on("goodwe:error", function(err) {
+            node.warn(`Protocol error: ${err.message}`);
+        });
 
         /**
          * Perform read operation
@@ -168,33 +176,15 @@ module.exports = function(RED) {
                     throw new Error("Invalid host address");
                 }
 
-                // Initialize protocol handler if not exists
-                if (!node.protocolHandler) {
-                    node.protocolHandler = new ProtocolHandler({
-                        host: node.host,
-                        port: node.port,
-                        protocol: node.protocol,
-                        family: node.family,
-                        timeout: node.timeout || 1000,
-                        retries: node.retries || 3
-                    });
-
-                    // Setup status event handlers
-                    node.protocolHandler.on("status", (status) => {
-                        updateNodeStatus(node, status);
-                    });
-
-                    node.protocolHandler.on("error", (err) => {
-                        node.warn(`Protocol error: ${err.message}`);
-                    });
-                }
+                // Get shared protocol handler from config node
+                const protocolHandler = node.configNode.getProtocolHandler();
 
                 // Update status
                 node.status({ fill: "blue", shape: "dot", text: "reading..." });
 
                 // Read runtime data from inverter
-                const runtimeData = await node.protocolHandler.readRuntimeData();
-                
+                const runtimeData = await protocolHandler.readRuntimeData();
+
                 // Parse sensor filter from input message
                 let sensorFilter = null;
                 if (msg.payload && typeof msg.payload === "object") {
@@ -213,7 +203,7 @@ module.exports = function(RED) {
                 // Preserve original message properties (except payload)
                 const outputMsg = Object.assign({}, msg);
                 outputMsg.payload = formattedData;
-                
+
                 // Set topic if not already present
                 if (!outputMsg.topic) {
                     outputMsg.topic = "goodwe/runtime_data";
@@ -239,7 +229,7 @@ module.exports = function(RED) {
                 if (done) done();
             } catch (err) {
                 node.status({ fill: "red", shape: "ring", text: "error" });
-                
+
                 if (done) {
                     done(err);
                 } else {
@@ -265,19 +255,19 @@ module.exports = function(RED) {
         if (node.polling > 0) {
             const intervalMs = node.polling * 1000;
             node.status({ fill: "blue", shape: "ring", text: `polling ${node.polling}s` });
-            
+
             node.pollingInterval = setInterval(() => {
                 // Guard against concurrent reads
                 if (node.isReading) {
                     node.warn("Skipping poll - previous read still in progress");
                     return;
                 }
-                
+
                 node.isReading = true;
-                
+
                 // Create a trigger message
                 const msg = { payload: true };
-                
+
                 performRead(msg, (outputMsg) => {
                     node.send(outputMsg);
                     node.isReading = false;
@@ -294,19 +284,18 @@ module.exports = function(RED) {
         /**
          * Cleanup on node close
          */
-        node.on("close", async function(done) {
+        node.on("close", function(done) {
             // Stop polling
             if (node.pollingInterval) {
                 clearInterval(node.pollingInterval);
                 node.pollingInterval = null;
             }
 
-            // Close protocol handler connection
-            if (node.protocolHandler) {
-                await node.protocolHandler.disconnect();
-                node.protocolHandler = null;
+            // Deregister from config node (config node owns the handler)
+            if (node.configNode) {
+                node.configNode.deregisterUser(node);
             }
-            
+
             node.status({});
             done();
         });
@@ -338,10 +327,10 @@ module.exports = function(RED) {
             break;
         case "retrying":
             if (status.attempt && status.maxRetries) {
-                node.status({ 
-                    fill: "orange", 
-                    shape: "dot", 
-                    text: `retry ${status.attempt}/${status.maxRetries}` 
+                node.status({
+                    fill: "orange",
+                    shape: "dot",
+                    text: `retry ${status.attempt}/${status.maxRetries}`
                 });
             }
             break;
