@@ -27,7 +27,8 @@
       "goodwe": "nodes/goodwe.js",
       "goodwe-config": "nodes/config.js",
       "goodwe-read": "nodes/read.js",
-      "goodwe-discover": "nodes/discover.js"
+      "goodwe-discover": "nodes/discover.js",
+      "goodwe-info": "nodes/info.js"
     }
   },
   "engines": {

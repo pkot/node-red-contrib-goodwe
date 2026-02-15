@@ -5,7 +5,7 @@
  * connection management, error handling, and retry logic.
  */
 
-const { ProtocolHandler } = require("../lib/protocol.js");
+const { ProtocolHandler, parseDeviceInfo } = require("../lib/protocol.js");
 
 describe("ProtocolHandler", () => {
     
@@ -387,6 +387,54 @@ describe("discovery helper functions", () => {
             // EPERM or other error is acceptable in test environment
             expect(err).toBeDefined();
         }
+    });
+
+    it("should parse device info from AA55 payload", () => {
+        // Build a mock device info payload
+        const payload = Buffer.alloc(53);
+        // Model name (bytes 0-9)
+        payload.write("GW5000-EH\0", 0, 10, "ascii");
+        // Serial number (bytes 10-25)
+        payload.write("95027EST123A0001", 10, 16, "ascii");
+        // Firmware (bytes 26-31)
+        payload.write("V2.01\0", 26, 6, "ascii");
+        // ARM firmware (bytes 32-37)
+        payload.write("V2.01\0", 32, 6, "ascii");
+        // DSP1 version (bytes 38-43)
+        payload.write("V1.14\0", 38, 6, "ascii");
+        // DSP2 version (bytes 44-49)
+        payload.write("V1.14\0", 44, 6, "ascii");
+        // Rated power (bytes 50-51): 5000W
+        payload.writeUInt16BE(5000, 50);
+        // AC output type (byte 52): single phase
+        payload.writeUInt8(0, 52);
+
+        const info = parseDeviceInfo(payload);
+        expect(info.model_name).toBe("GW5000-EH");
+        expect(info.serial_number).toBe("95027EST123A0001");
+        expect(info.firmware).toBe("V2.01");
+        expect(info.arm_firmware).toBe("V2.01");
+        expect(info.dsp1_version).toBe("V1.14");
+        expect(info.dsp2_version).toBe("V1.14");
+        expect(info.rated_power).toBe(5000);
+        expect(info.ac_output_type).toBe(0);
+    });
+
+    it("should handle short device info payloads gracefully", () => {
+        // Only model name available
+        const payload = Buffer.alloc(10);
+        payload.write("GW3000-DT\0", 0, 10, "ascii");
+
+        const info = parseDeviceInfo(payload);
+        expect(info.model_name).toBe("GW3000-DT");
+        expect(info.serial_number).toBeUndefined();
+        expect(info.firmware).toBeUndefined();
+    });
+
+    it("should handle empty device info payload", () => {
+        const payload = Buffer.alloc(0);
+        const info = parseDeviceInfo(payload);
+        expect(info.model_name).toBeUndefined();
     });
 
     it("should parse discovery responses", async () => {
