@@ -92,7 +92,7 @@ describe("goodwe-discover node", () => {
         
         beforeEach(() => {
             // Spy on discoverInverters
-            discoverSpy = jest.spyOn(protocol, 'discoverInverters');
+            discoverSpy = jest.spyOn(protocol, "discoverInverters");
         });
         
         afterEach(() => {
@@ -652,21 +652,18 @@ describe("goodwe-discover node", () => {
             
             helper.load(discoverNode, flow, () => {
                 const n1 = helper.getNode("n1");
-                const n2 = helper.getNode("n2");
-                
-                let errorReceived = false;
-                
+
                 n1.on("call:error", () => {
-                    errorReceived = true;
+                    // Error was emitted — expected outcome of one branch
                 });
-                
+
                 // Wait for potential error
                 setTimeout(() => {
                     // Either error was received or discovery completed
                     // Both are acceptable for this test
                     done();
                 }, 500);
-                
+
                 n1.receive({ payload: true });
             });
         });
