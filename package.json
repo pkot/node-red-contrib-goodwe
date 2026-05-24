@@ -19,8 +19,8 @@
   ],
   "scripts": {
     "test": "jest",
-    "lint": "eslint nodes lib test --ext .js",
-    "lint:fix": "eslint --fix nodes lib test --ext .js"
+    "lint": "eslint nodes lib test",
+    "lint:fix": "eslint --fix nodes lib test"
   },
   "author": "Paweł Kot",
   "license": "MIT",
@@ -38,11 +38,13 @@
     }
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": "^20.19.0 || ^22.13.0 || >=24"
   },
   "dependencies": {},
   "devDependencies": {
-    "eslint": "^8.50.0",
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.4.0",
+    "globals": "^17.6.0",
     "jest": "^30.4.2",
     "node-red": "^4.1.10",
     "node-red-node-test-helper": "^0.3.4"

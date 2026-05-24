@@ -153,7 +153,7 @@ describe("ProtocolHandler", () => {
             // Simulate a failure
             try {
                 await handler.sendCommand(Buffer.from([0x00]));
-            } catch (err) {
+            } catch (_err) {
                 // Expected to fail
             }
             
@@ -394,7 +394,7 @@ describe("ProtocolHandler", () => {
             try {
                 await handler.sendCommandWithRetry(Buffer.from([0x00]));
                 throw new Error("Should have failed after retries");
-            } catch (err) {
+            } catch (_err) {
                 const elapsed = Date.now() - startTime;
                 // Should have tried multiple times with backoff
                 expect(elapsed).toBeGreaterThan(100); // At least one retry
@@ -463,10 +463,10 @@ describe("ProtocolHandler", () => {
             
             try {
                 await handler.sendCommand(Buffer.from([0x00]));
-            } catch (err) {
+            } catch (_err) {
                 // Expected
             }
-            
+
             const status = handler.getStatus();
             expect(status.lastError).toBeDefined();
             
