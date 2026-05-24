@@ -138,6 +138,9 @@ msg.payload = {
 };
 return msg;</pre>
 
+    <h3>Troubleshooting</h3>
+    <p><strong>macOS:</strong> Sonoma and later prompt for <em>Local Network</em> permission before a process can broadcast UDP on the LAN. If discovery returns empty on macOS, grant the runtime that launches Node-RED access in <em>System Settings → Privacy & Security → Local Network</em>. The OS drops the probe silently without it, so no error surfaces.</p>
+
     <h3>Status Updates</h3>
     <p>The node provides visual status feedback during discovery:</p>
     <ul>

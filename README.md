@@ -232,6 +232,8 @@ The discover node finds GoodWe inverters on the local network using UDP broadcas
 }
 ```
 
+**macOS note:** Recent macOS versions (Sonoma / Sequoia onward) prompt for **Local Network** permission the first time a process binds a UDP socket and broadcasts on the LAN. If discovery returns empty results on macOS, check **System Settings → Privacy & Security → Local Network** and grant access to the runtime that runs Node-RED (Terminal, the Node-RED app, or whatever launches the `node` process). Without this permission the OS silently drops the discovery probe — there's no error to surface. Equivalent to upstream marcelblijleven/goodwe `14d4571`.
+
 ### Error Handling
 
 All nodes provide enhanced error messages with actionable suggestions:
