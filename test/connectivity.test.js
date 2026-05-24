@@ -590,6 +590,36 @@ describe("discovery helper functions", () => {
         }
     });
 
+    describe("Modbus TCP TX-ID is per-handler and unpredictable (#68)", () => {
+        it("two handlers in the same process have independent TX-ID streams", () => {
+            const h1 = new ProtocolHandler({ protocol: "tcp", family: "ET" });
+            const h2 = new ProtocolHandler({ protocol: "tcp", family: "ET" });
+
+            // Each handler initialises its TX-ID counter to a random 16-bit
+            // offset. The probability of two random 16-bit offsets colliding
+            // is 1/65535; run a handful of times to make the test stable.
+            // Instead of asserting probabilistic inequality, verify that the
+            // module-level counter is no longer the source of either stream:
+            // pull a frame from h1, then a frame from h2, and confirm h2's
+            // TX-ID is NOT (h1's + 1).
+            const f1 = h1._buildReadCommand();
+            const f2 = h2._buildReadCommand();
+            const id1 = f1.readUInt16BE(0);
+            const id2 = f2.readUInt16BE(0);
+            // h2's stream is independent of h1's, so id2 should not equal id1+1
+            // except by a 1-in-65535 coincidence we can ignore for testing.
+            expect(id2).not.toBe(((id1 % 0xFFFF) + 1));
+        });
+
+        it("TX-ID wraps within the 16-bit space", () => {
+            const h = new ProtocolHandler({ protocol: "tcp", family: "ET" });
+            // Seed near the wrap boundary
+            h._txId = 0xFFFE;
+            expect(h._nextTxId()).toBe(0xFFFF);
+            expect(h._nextTxId()).toBe(1);
+        });
+    });
+
     describe("family / model detection (#57)", () => {
         const {
             detectInverterFamily,
