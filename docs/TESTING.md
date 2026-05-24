@@ -102,7 +102,8 @@ Test files are located in the `test/` directory and follow this naming conventio
  */
 
 const helper = require("node-red-node-test-helper");
-const goodweNode = require("../nodes/goodwe.js");
+const configNode = require("../nodes/config.js");
+const readNode = require("../nodes/read.js");
 
 helper.init(require.resolve("node-red"));
 
@@ -119,16 +120,24 @@ describe("feature name", () => {
 
     it("should do something specific", (done) => {
         const flow = [
-            { 
-                id: "n1", 
-                type: "goodwe",
+            {
+                id: "c1",
+                type: "goodwe-config",
                 host: "192.168.1.100",
+                port: "8899",
+                protocol: "udp",
+                family: "ET"
+            },
+            {
+                id: "n1",
+                type: "goodwe-read",
+                config: "c1",
                 wires: [["n2"]]
             },
             { id: "n2", type: "helper" }
         ];
         
-        helper.load(goodweNode, flow, () => {
+        helper.load(readNode, flow, () => {
             const n1 = helper.getNode("n1");
             const n2 = helper.getNode("n2");
             
@@ -153,10 +162,10 @@ describe("feature name", () => {
 
 ```javascript
 // Load a single node
-helper.load(goodweNode, flow, callback);
+helper.load(readNode, flow, callback);
 
 // Load multiple nodes
-helper.load([goodweNode, otherNode], flow, callback);
+helper.load([readNode, otherNode], flow, callback);
 ```
 
 #### Creating Test Flows
@@ -165,7 +174,7 @@ helper.load([goodweNode, otherNode], flow, callback);
 const flow = [
     {
         id: "n1",
-        type: "goodwe",
+        type: "goodwe-read",
         name: "test node",
         host: "192.168.1.100",
         port: 8899,
@@ -219,99 +228,7 @@ afterEach(function (done) {
 
 ## Mocking Inverter Responses
 
-Since we can't connect to real inverters during testing, we mock responses for offline development.
-
-### Mock Data Structure
-
-Create mock data files in `test/fixtures/`:
-
-```javascript
-// test/fixtures/mock-inverter-data.js
-module.exports = {
-    runtimeData: {
-        success: true,
-        timestamp: "2025-10-21T12:00:00.000Z",
-        data: {
-            vpv1: 245.5,  // PV1 voltage
-            vpv2: 242.3,  // PV2 voltage
-            ipv1: 8.2,    // PV1 current
-            ipv2: 7.9,    // PV2 current
-            vac1: 230.1,  // AC voltage phase 1
-            iac1: 12.5,   // AC current phase 1
-            pac: 2875,    // Active power
-            temperature: 42.5,
-            e_day: 12.5,  // Daily energy
-            e_total: 1234.5  // Total energy
-        }
-    },
-    
-    deviceInfo: {
-        success: true,
-        timestamp: "2025-10-21T12:00:00.000Z",
-        data: {
-            modelName: "GW5000-ET",
-            serialNumber: "12345678",
-            firmwareVersion: "V1.2.3",
-            moduleSoftwareVersion: "V2.0.1",
-            rated_power: 5000,
-            ac_output_type: 1
-        }
-    },
-    
-    errorResponse: {
-        success: false,
-        timestamp: "2025-10-21T12:00:00.000Z",
-        error: {
-            code: "CONNECTION_TIMEOUT",
-            message: "Failed to connect to inverter",
-            details: "Timeout after 5000ms"
-        }
-    }
-};
-```
-
-### Using Mocks in Tests
-
-```javascript
-const mockData = require("./fixtures/mock-inverter-data");
-
-describe("runtime data reading", () => {
-    it("should parse runtime data correctly", (done) => {
-        const flow = [
-            { 
-                id: "n1", 
-                type: "goodwe",
-                host: "192.168.1.100",
-                wires: [["n2"]]
-            },
-            { id: "n2", type: "helper" }
-        ];
-        
-        helper.load(goodweNode, flow, () => {
-            const n1 = helper.getNode("n1");
-            const n2 = helper.getNode("n2");
-            
-            // Mock the internal communication method
-            n1._readInverter = jest.fn().mockResolvedValue(
-                mockData.runtimeData.data
-            );
-            
-            n2.on("input", (msg) => {
-                try {
-                    expect(msg.payload.success).toBe(true);
-                    expect(msg.payload.data.vpv1).toBe(245.5);
-                    expect(msg.payload.data.pac).toBe(2875);
-                    done();
-                } catch(err) {
-                    done(err);
-                }
-            });
-            
-            n1.receive({ payload: "read" });
-        });
-    });
-});
-```
+Since we can't connect to real inverters during testing, mock the network layer for offline development. See `test/connectivity.test.js`, `test/read-node.test.js`, and `test/discover-node.test.js` for current patterns.
 
 ### Mocking Network Requests
 
@@ -357,7 +274,7 @@ jest.mock("modbus-serial", () => ({
 
 2. **GREEN**: Write minimum code to make test pass
    ```javascript
-   // In goodwe.js
+   // In nodes/read.js
    this.connected = false;
    
    this.connect = function() {
@@ -388,11 +305,11 @@ jest.mock("modbus-serial", () => ({
 describe("sensor reading", () => {
     it("should read specific sensor by ID", (done) => {
         const flow = [
-            { id: "n1", type: "goodwe", host: "192.168.1.100", wires: [["n2"]] },
+            { id: "n1", type: "goodwe-read", host: "192.168.1.100", wires: [["n2"]] },
             { id: "n2", type: "helper" }
         ];
         
-        helper.load(goodweNode, flow, () => {
+        helper.load(readNode, flow, () => {
             const n1 = helper.getNode("n1");
             const n2 = helper.getNode("n2");
             
@@ -528,11 +445,11 @@ it("should handle async operations", (done) => {
 ```javascript
 it("should handle connection errors gracefully", (done) => {
     const flow = [
-        { id: "n1", type: "goodwe", host: "invalid.host", wires: [["n2"]] },
+        { id: "n1", type: "goodwe-read", host: "invalid.host", wires: [["n2"]] },
         { id: "n2", type: "helper" }
     ];
     
-    helper.load(goodweNode, flow, () => {
+    helper.load(readNode, flow, () => {
         const n1 = helper.getNode("n1");
         const n2 = helper.getNode("n2");
         
@@ -557,7 +474,7 @@ it("should handle connection errors gracefully", (done) => {
 it("should update status during operation", (done) => {
     // Status updates are internal to the node
     // We verify behavior indirectly through node state
-    helper.load(goodweNode, flow, () => {
+    helper.load(readNode, flow, () => {
         const n1 = helper.getNode("n1");
         
         // Capture status calls if needed

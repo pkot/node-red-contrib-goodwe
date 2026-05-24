@@ -10,7 +10,6 @@
     "pv",
     "photovoltaic"
   ],
-  "main": "nodes/goodwe.js",
   "scripts": {
     "test": "jest",
     "lint": "eslint nodes/**/*.js test/**/*.js",
@@ -24,7 +23,6 @@
   },
   "node-red": {
     "nodes": {
-      "goodwe": "nodes/goodwe.js",
       "goodwe-config": "nodes/config.js",
       "goodwe-read": "nodes/read.js",
       "goodwe-discover": "nodes/discover.js",
