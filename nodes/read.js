@@ -6,6 +6,7 @@
  */
 
 const { getSensorMetadata } = require("../lib/node-helpers.js");
+const { enhanceError } = require("../lib/errors.js");
 
 module.exports = function(RED) {
     "use strict";
@@ -177,7 +178,9 @@ module.exports = function(RED) {
             try {
                 // Validate host configuration
                 if (!node.host || node.host === "") {
-                    throw new Error("Invalid host address");
+                    const err = new Error("Invalid host address");
+                    err.code = "INVALID_HOST";
+                    throw enhanceError(err, { host: node.host });
                 }
 
                 // Get shared protocol handler from config node

@@ -121,6 +121,15 @@ describe("Error Enhancement", () => {
 
             expect(result).toBe(err);
         });
+
+        it("should add INVALID_HOST suggestions when host is empty (#67)", () => {
+            const err = new Error("Invalid host address");
+            err.code = "INVALID_HOST";
+            enhanceError(err, { host: "" });
+            expect(err.suggestions).toBeDefined();
+            expect(err.suggestions.some(s => s.toLowerCase().includes("goodwe-config"))).toBe(true);
+            expect(err.suggestions.some(s => s.toLowerCase().includes("discover"))).toBe(true);
+        });
     });
 
     describe("inferErrorCode", () => {

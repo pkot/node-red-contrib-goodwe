@@ -590,6 +590,33 @@ describe("discovery helper functions", () => {
         }
     });
 
+    describe("protocol-validation errors carry PROTOCOL_ERROR code (#67)", () => {
+        it("malformed AA55 frame surfaces as PROTOCOL_ERROR, not READ_ERROR", () => {
+            const handler = new ProtocolHandler({ protocol: "udp", family: "ES" });
+            // ES uses AA55 framing. A bogus 9-byte buffer fails validation.
+            const bad = Buffer.from([0xAA, 0x55, 0xC0, 0x7F, 0x01, 0x86, 0x00, 0x00, 0x00]);
+            try {
+                handler._extractPayload(bad);
+                throw new Error("expected throw");
+            } catch (err) {
+                expect(err.code).toBe("PROTOCOL_ERROR");
+                expect(err.message).toMatch(/Invalid AA55 response/);
+            }
+        });
+
+        it("malformed Modbus TCP frame surfaces as PROTOCOL_ERROR", () => {
+            const handler = new ProtocolHandler({ protocol: "tcp", family: "ET" });
+            const bad = Buffer.from([0, 0, 0, 0, 0, 0, 0, 0, 0]);
+            try {
+                handler._extractPayload(bad);
+                throw new Error("expected throw");
+            } catch (err) {
+                expect(err.code).toBe("PROTOCOL_ERROR");
+                expect(err.message).toMatch(/Invalid Modbus TCP response/);
+            }
+        });
+    });
+
     describe("Modbus TCP TX-ID is per-handler and unpredictable (#68)", () => {
         it("two handlers in the same process have independent TX-ID streams", () => {
             const h1 = new ProtocolHandler({ protocol: "tcp", family: "ET" });
