@@ -771,6 +771,61 @@ describe("discovery helper functions", () => {
         });
     });
 
+    describe("broadcast address validation (#76)", () => {
+        const { isPrivateBroadcast, discoverInverters } = require("../lib/protocol.js");
+
+        it("accepts limited broadcast and RFC1918 ranges", () => {
+            expect(isPrivateBroadcast("255.255.255.255")).toBe(true);
+            expect(isPrivateBroadcast("192.168.1.255")).toBe(true);
+            expect(isPrivateBroadcast("10.0.0.255")).toBe(true);
+            expect(isPrivateBroadcast("172.16.0.255")).toBe(true);
+            expect(isPrivateBroadcast("172.31.255.255")).toBe(true);
+            expect(isPrivateBroadcast("169.254.0.1")).toBe(true); // link-local
+            expect(isPrivateBroadcast("224.0.0.1")).toBe(true);   // link-local mcast
+        });
+
+        it("rejects public IPs", () => {
+            expect(isPrivateBroadcast("8.8.8.8")).toBe(false);
+            expect(isPrivateBroadcast("1.1.1.1")).toBe(false);
+            expect(isPrivateBroadcast("172.32.0.1")).toBe(false); // outside 172.16/12
+            expect(isPrivateBroadcast("172.15.255.255")).toBe(false);
+        });
+
+        it("rejects malformed input (fail-closed)", () => {
+            expect(isPrivateBroadcast("")).toBe(false);
+            expect(isPrivateBroadcast(null)).toBe(false);
+            expect(isPrivateBroadcast("not.an.address")).toBe(false);
+        });
+
+        it("discoverInverters refuses a public broadcast address without opt-out", async () => {
+            await expect(
+                discoverInverters({ timeout: 100, broadcastAddress: "8.8.8.8" })
+            ).rejects.toMatchObject({
+                code: "INVALID_CONFIG",
+                message: expect.stringContaining("non-private")
+            });
+        });
+
+        it("discoverInverters accepts public broadcast with allowPublicBroadcast=true", async () => {
+            // Doesn't reject for the broadcastAddress reason. The actual
+            // socket.send may fail downstream depending on the environment;
+            // we just verify the up-front policy check is bypassed.
+            let caught;
+            try {
+                await discoverInverters({
+                    timeout: 100,
+                    broadcastAddress: "8.8.8.8",
+                    allowPublicBroadcast: true
+                });
+            } catch (e) {
+                caught = e;
+            }
+            if (caught) {
+                expect(caught.code).not.toBe("INVALID_CONFIG");
+            }
+        });
+    });
+
     describe("source-IP filtering (#61)", () => {
         const { isLocalSubnet, ipv4ToInt } = require("../lib/protocol.js");
 
