@@ -1,7 +1,6 @@
 # node-red-contrib-goodwe
 
 [![CI](https://github.com/pkot/node-red-contrib-goodwe/actions/workflows/ci.yml/badge.svg)](https://github.com/pkot/node-red-contrib-goodwe/actions/workflows/ci.yml)
-[![npm version](https://badge.fury.io/js/node-red-contrib-goodwe.svg)](https://www.npmjs.com/package/node-red-contrib-goodwe)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Node-RED node for connecting to GoodWe inverters over local network and retrieving runtime sensor values and configuration parameters.
