@@ -14,11 +14,8 @@
     "nodes/",
     "lib/",
     "examples/",
-    "docs/CONFIGURATION.md",
-    "docs/README.md",
     "README.md",
-    "LICENSE",
-    "CHANGELOG.md"
+    "LICENSE"
   ],
   "scripts": {
     "test": "jest",
