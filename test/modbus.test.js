@@ -280,6 +280,12 @@ describe("Modbus RTU", () => {
         test("throws for too-short response", () => {
             expect(() => extractRtuPayload(Buffer.from([0xAA]))).toThrow();
         });
+
+        test("throws when declared byteCount exceeds buffer (#73)", () => {
+            // Header claims 100-byte payload but only 2 bytes follow.
+            const truncated = Buffer.from([0xAA, 0x55, 0xF7, 0x03, 100, 0x11, 0x22]);
+            expect(() => extractRtuPayload(truncated)).toThrow(/truncated/i);
+        });
     });
 });
 
@@ -391,6 +397,12 @@ describe("Modbus TCP", () => {
 
         test("throws for too-short response", () => {
             expect(() => extractTcpPayload(Buffer.alloc(5))).toThrow();
+        });
+
+        test("throws when declared byteCount exceeds buffer (#73)", () => {
+            // 9-byte header with byteCount=200 but only 2 bytes of payload.
+            const truncated = Buffer.from([0x00, 0x01, 0x00, 0x00, 0x00, 0xCB, 0xF7, 0x03, 200, 0x11, 0x22]);
+            expect(() => extractTcpPayload(truncated)).toThrow(/truncated/i);
         });
     });
 });
