@@ -5,7 +5,7 @@
  * GoodWe inverters on the local network using UDP broadcast.
  */
 
-const protocol = require("../lib/protocol.js");
+const discovery = require("../lib/discovery.js");
 const { STATUSES, setTransientStatus, parseSafeInteger } = require("../lib/node-helpers.js");
 
 // Constants
@@ -47,7 +47,7 @@ module.exports = function(RED) {
                 node.status({ fill: "blue", shape: "dot", text: "discovering..." });
 
                 // Perform discovery
-                const inverters = await protocol.discoverInverters({
+                const inverters = await discovery.discoverInverters({
                     timeout: node.timeout,
                     broadcastAddress: node.broadcastAddress
                 });
