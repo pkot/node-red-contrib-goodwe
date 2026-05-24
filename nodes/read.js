@@ -5,7 +5,12 @@
  * with support for multiple output formats and auto-polling.
  */
 
-const { getSensorMetadata } = require("../lib/node-helpers.js");
+const {
+    getSensorMetadata,
+    STATUSES,
+    setTransientStatus,
+    mapProtocolStatus
+} = require("../lib/node-helpers.js");
 const { enhanceError } = require("../lib/errors.js");
 
 module.exports = function(RED) {
@@ -125,7 +130,7 @@ module.exports = function(RED) {
         const configSource = RED.nodes.getNode(config.config);
         if (!configSource) {
             node.error("Configuration node not found");
-            node.status({ fill: "red", shape: "ring", text: "config error" });
+            node.status(STATUSES.configError);
             return;
         }
         node.configNode = configSource;
@@ -157,11 +162,15 @@ module.exports = function(RED) {
         node.isReading = false;
 
         // Initialize status
-        node.status({ fill: "grey", shape: "ring", text: "ready" });
+        node.status(STATUSES.ready);
 
         // Listen for status events forwarded from config node
         node.on("goodwe:status", function(status) {
-            updateNodeStatus(node, status);
+            // Suppress status changes while polling (the polling cadence sets
+            // its own visible states).
+            if (!node.pollingInterval) {
+                node.status(mapProtocolStatus(status));
+            }
         });
 
         node.on("goodwe:error", function(err) {
@@ -177,7 +186,7 @@ module.exports = function(RED) {
                 clearInterval(node.pollingInterval);
                 node.pollingInterval = null;
             }
-            node.status({ fill: "grey", shape: "ring", text: "config closing" });
+            node.status(STATUSES.configClose);
         });
 
         /**
@@ -199,7 +208,7 @@ module.exports = function(RED) {
                 const protocolHandler = node.configNode.getProtocolHandler();
 
                 // Update status
-                node.status({ fill: "blue", shape: "dot", text: "reading..." });
+                node.status(STATUSES.reading);
 
                 // Read runtime data from inverter
                 const runtimeData = await protocolHandler.readRuntimeData();
@@ -236,19 +245,16 @@ module.exports = function(RED) {
                     host: node.host
                 };
 
-                // Success status
+                // Success status — only when not polling (polling shows its
+                // own cadence-based status).
                 if (!node.pollingInterval) {
-                    // Only show temporary status if not polling
-                    node.status({ fill: "green", shape: "dot", text: "ok" });
-                    setTimeout(() => {
-                        node.status({ fill: "grey", shape: "ring", text: "ready" });
-                    }, 2000);
+                    setTransientStatus(node);
                 }
 
                 send(outputMsg);
                 if (done) done();
             } catch (err) {
-                node.status({ fill: "red", shape: "ring", text: "error" });
+                node.status(STATUSES.error);
 
                 if (done) {
                     done(err);
@@ -319,44 +325,6 @@ module.exports = function(RED) {
             node.status({});
             done();
         });
-    }
-
-    /**
-     * Update node status based on protocol handler status
-     * @param {Object} node - Node instance
-     * @param {Object} status - Status object from protocol handler
-     */
-    function updateNodeStatus(node, status) {
-        // Don't update status if polling is active
-        if (node.pollingInterval) {
-            return;
-        }
-
-        switch (status.state) {
-        case "connecting":
-            node.status({ fill: "yellow", shape: "ring", text: "connecting..." });
-            break;
-        case "connected":
-            node.status({ fill: "green", shape: "dot", text: "connected" });
-            break;
-        case "disconnected":
-            node.status({ fill: "grey", shape: "ring", text: "ready" });
-            break;
-        case "reading":
-            node.status({ fill: "blue", shape: "dot", text: "reading..." });
-            break;
-        case "retrying":
-            if (status.attempt && status.maxRetries) {
-                node.status({
-                    fill: "orange",
-                    shape: "dot",
-                    text: `retry ${status.attempt}/${status.maxRetries}`
-                });
-            }
-            break;
-        default:
-            node.status({ fill: "grey", shape: "ring", text: status.state });
-        }
     }
 
     // Register the node

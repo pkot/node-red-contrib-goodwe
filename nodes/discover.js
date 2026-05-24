@@ -6,6 +6,7 @@
  */
 
 const protocol = require("../lib/protocol.js");
+const { STATUSES, setTransientStatus } = require("../lib/node-helpers.js");
 
 // Constants
 const DEFAULT_PORT = 8899;
@@ -29,7 +30,7 @@ module.exports = function(RED) {
         node.statusResetTimers = [];
 
         // Initialize status
-        node.status({ fill: "grey", shape: "ring", text: "ready" });
+        node.status(STATUSES.ready);
 
         /**
          * Perform discovery operation
@@ -73,28 +74,21 @@ module.exports = function(RED) {
                 // only `timestamp` is set here.
                 outputMsg.timestamp = new Date().toISOString();
 
-                // Update status based on results
+                // Result status: bespoke text for found-vs-empty, then the
+                // shared transient → ready reset.
                 const statusText = devices.length > 0 ? `found ${devices.length}` : "no devices";
-                node.status({ fill: "green", shape: "dot", text: statusText });
-
-                // Reset status after 2 seconds
-                const timer = setTimeout(() => {
-                    node.status({ fill: "grey", shape: "ring", text: "ready" });
-                }, 2000);
-                timer.unref(); // Allow process to exit
-                node.statusResetTimers.push(timer);
+                setTransientStatus(node, {
+                    status: { fill: "green", shape: "dot", text: statusText },
+                    timers: node.statusResetTimers
+                });
 
                 send(outputMsg);
                 if (done) done();
             } catch (err) {
-                node.status({ fill: "red", shape: "ring", text: "discovery failed" });
-                
-                // Reset status after 2 seconds
-                const timer = setTimeout(() => {
-                    node.status({ fill: "grey", shape: "ring", text: "ready" });
-                }, 2000);
-                timer.unref(); // Allow process to exit
-                node.statusResetTimers.push(timer);
+                setTransientStatus(node, {
+                    status: { fill: "red", shape: "ring", text: "discovery failed" },
+                    timers: node.statusResetTimers
+                });
 
                 if (done) {
                     done(err);
