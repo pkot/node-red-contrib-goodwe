@@ -68,8 +68,10 @@ module.exports = function(RED) {
                 // Set topic
                 outputMsg.topic = "goodwe/discover";
 
-                // Add metadata
-                outputMsg._timestamp = new Date().toISOString();
+                // Canonical worker-node metadata (#65). Discover has no
+                // single inverter to attach (the payload IS the list), so
+                // only `timestamp` is set here.
+                outputMsg.timestamp = new Date().toISOString();
 
                 // Update status based on results
                 const statusText = devices.length > 0 ? `found ${devices.length}` : "no devices";

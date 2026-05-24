@@ -201,10 +201,10 @@ describe("GoodWe Info Node", function () {
 
                 n2.on("input", function (msg) {
                     try {
-                        expect(msg._timestamp).toBeDefined();
-                        expect(msg._inverter).toBeDefined();
-                        expect(msg._inverter.family).toBe("ET");
-                        expect(msg._inverter.host).toBe("192.168.1.100");
+                        expect(msg.timestamp).toBeDefined();
+                        expect(msg.inverter).toBeDefined();
+                        expect(msg.inverter.family).toBe("ET");
+                        expect(msg.inverter.host).toBe("192.168.1.100");
                         done();
                     } catch (err) {
                         done(err);

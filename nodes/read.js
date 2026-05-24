@@ -216,9 +216,10 @@ module.exports = function(RED) {
                     outputMsg.topic = "goodwe/runtime_data";
                 }
 
-                // Add metadata
-                outputMsg._timestamp = new Date().toISOString();
-                outputMsg._inverter = {
+                // Canonical worker-node metadata (#65). Standard Node-RED
+                // convention is top-level fields without underscore prefix.
+                outputMsg.timestamp = new Date().toISOString();
+                outputMsg.inverter = {
                     family: node.family,
                     host: node.host
                 };

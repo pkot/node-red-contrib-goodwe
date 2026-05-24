@@ -132,8 +132,8 @@ Flat format (default):
         // ... more sensors
     },
     topic: "goodwe/runtime_data",
-    _timestamp: "2025-11-02T...",
-    _inverter: { family: "ET", host: "192.168.1.100" }
+    timestamp: "2025-11-02T...",
+    inverter: { family: "ET", host: "192.168.1.100" }
 }
 ```
 
@@ -194,8 +194,8 @@ The info node retrieves device identification and firmware information from the 
         family: "ET"
     },
     topic: "goodwe/device_info",
-    _timestamp: "2025-11-02T...",
-    _inverter: { family: "ET", host: "192.168.1.100" }
+    timestamp: "2025-11-02T...",
+    inverter: { family: "ET", host: "192.168.1.100" }
 }
 ```
 
@@ -227,7 +227,7 @@ The discover node finds GoodWe inverters on the local network using UDP broadcas
         count: 1
     },
     topic: "goodwe/discover",
-    _timestamp: "2025-11-02T..."
+    timestamp: "2025-11-02T..."
 }
 ```
 
