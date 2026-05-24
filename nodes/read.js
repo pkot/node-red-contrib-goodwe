@@ -18,10 +18,14 @@ module.exports = function(RED) {
     "use strict";
 
     /**
-     * Format runtime data based on output format setting
-     * @param {Object} data - Raw runtime data
-     * @param {string} format - Output format (flat/categorized/array)
-     * @param {Array} sensorFilter - Optional list of sensor IDs to include
+     * Format runtime data based on output format setting.
+     * @param {Object} data - Raw runtime data (sensor id → value)
+     * @param {string} format - Output format ("flat" | "categorized" | "array")
+     * @param {Array<string>|null} sensorFilter - Optional sensor IDs to include
+     *   (others are dropped). Pass null/empty to include every sensor.
+     * @param {string} family - Inverter family code. Drives the sensor
+     *   metadata lookup used by the "categorized" and "array" formats; ignored
+     *   by "flat". Defaults to "ET" if falsy.
      * @returns {Object|Array} Formatted data
      */
     function formatRuntimeData(data, format, sensorFilter, family) {
@@ -51,9 +55,12 @@ module.exports = function(RED) {
     }
 
     /**
-     * Format data into categorized groups
-     * @param {Object} data - Runtime data
-     * @returns {Object} Categorized data
+     * Format data into categorized groups (pv / battery / grid / ups / status).
+     * @param {Object} data - Runtime data (sensor id → value)
+     * @param {Object} sensorMetadata - Sensor metadata map from
+     *   `lib/node-helpers.getSensorMetadata(family)`, used to derive each
+     *   sensor's category.
+     * @returns {Object} Categorized data; empty categories are stripped.
      */
     function formatCategorized(data, sensorMetadata) {
         const categorized = {
@@ -88,9 +95,13 @@ module.exports = function(RED) {
     }
 
     /**
-     * Format data into array with metadata
-     * @param {Object} data - Runtime data
-     * @returns {Array} Array of sensor objects with metadata
+     * Format data into an array with per-sensor metadata.
+     * @param {Object} data - Runtime data (sensor id → value)
+     * @param {Object} sensorMetadata - Sensor metadata map from
+     *   `lib/node-helpers.getSensorMetadata(family)`, used to attach `name`,
+     *   `unit`, and `kind` to each entry. Sensors not in the map get defaults
+     *   (`name: <id>`, `unit: ""`, `kind: "UNKNOWN"`).
+     * @returns {Array<{id, value, name, unit, kind}>}
      */
     function formatArray(data, sensorMetadata) {
         const array = [];
