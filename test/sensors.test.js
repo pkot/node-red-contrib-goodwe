@@ -385,6 +385,20 @@ describe("parseSensorData", () => {
         expect(result.e_day).toBeCloseTo(15.2);
     });
 
+    test("parses DT vpv4/ipv4 for 4-MPPT KMT inverters (#82)", () => {
+        const buf = Buffer.alloc(146);
+
+        // vpv4 at register 30109, byte offset = (30109-30100)*2 = 18
+        buf.writeUInt16BE(3950, 18); // 395.0V
+        // ipv4 at register 30110, byte offset = (30110-30100)*2 = 20
+        buf.writeUInt16BE(125, 20);  // 12.5A
+
+        const result = parseSensorData(DT_SENSORS, buf, DT_REGISTER_START);
+
+        expect(result.vpv4).toBeCloseTo(395.0);
+        expect(result.ipv4).toBeCloseTo(12.5);
+    });
+
     test("parses ES sensor data from byte-offset buffer", () => {
         const buf = Buffer.alloc(93);
 
