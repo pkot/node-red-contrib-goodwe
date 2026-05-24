@@ -177,14 +177,14 @@ describe("ProtocolHandler", () => {
         });
 
         it("should timeout if no response received", async () => {
-            const handler = new ProtocolHandler({ 
+            const handler = new ProtocolHandler({
                 protocol: "udp",
                 timeout: 100,
                 host: "192.168.255.255" // Invalid host to ensure timeout
             });
-            
+
             await handler.connect();
-            
+
             try {
                 await handler.sendCommand(Buffer.from([0x00]));
                 throw new Error("Should have timed out");
@@ -192,8 +192,65 @@ describe("ProtocolHandler", () => {
                 // May get TIMEOUT or EPERM depending on environment
                 expect(["TIMEOUT", "EPERM"]).toContain(err.code);
             }
-            
+
             await handler.disconnect();
+        });
+
+        it("should serialize concurrent sendCommand() calls (no overlap)", async () => {
+            // Regression for #56: when multiple worker nodes share a handler,
+            // concurrent sendCommand() calls must run one at a time so UDP/TCP
+            // responses are not interleaved on the shared socket listener.
+            const handler = new ProtocolHandler({ protocol: "udp" });
+
+            const callLog = [];
+            let active = 0;
+            let maxConcurrent = 0;
+
+            // Replace the inner impl with a controllable stub. The queue logic
+            // is in sendCommand(); we exercise it directly without sockets.
+            handler._sendCommandImpl = async (cmd) => {
+                const id = cmd[0];
+                callLog.push(`start:${id}`);
+                active++;
+                maxConcurrent = Math.max(maxConcurrent, active);
+                // Yield several ticks so any racing caller would overlap.
+                await new Promise(r => setTimeout(r, 10));
+                active--;
+                callLog.push(`end:${id}`);
+                return Buffer.from([id]);
+            };
+
+            const results = await Promise.all([
+                handler.sendCommand(Buffer.from([1])),
+                handler.sendCommand(Buffer.from([2])),
+                handler.sendCommand(Buffer.from([3]))
+            ]);
+
+            expect(maxConcurrent).toBe(1);
+            expect(callLog).toEqual([
+                "start:1", "end:1",
+                "start:2", "end:2",
+                "start:3", "end:3"
+            ]);
+            expect(results.map(b => b[0])).toEqual([1, 2, 3]);
+        });
+
+        it("should continue serving subsequent calls after one rejects", async () => {
+            // Failures must not poison the queue.
+            const handler = new ProtocolHandler({ protocol: "udp" });
+
+            let calls = 0;
+            handler._sendCommandImpl = async () => {
+                calls++;
+                if (calls === 1) throw new Error("simulated failure");
+                return Buffer.from([calls]);
+            };
+
+            const first = handler.sendCommand(Buffer.from([0]));
+            const second = handler.sendCommand(Buffer.from([0]));
+
+            await expect(first).rejects.toThrow("simulated failure");
+            await expect(second).resolves.toEqual(Buffer.from([2]));
         });
     });
 
