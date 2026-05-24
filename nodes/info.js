@@ -11,15 +11,10 @@ const { STATUSES, setTransientStatus } = require("../lib/node-helpers.js");
 module.exports = function(RED) {
     "use strict";
 
-    /**
-     * GoodWe Info Node
-     * @param {Object} config - Node configuration
-     */
     function GoodWeInfoNode(config) {
         RED.nodes.createNode(this, config);
         const node = this;
 
-        // Get configuration from config node (required)
         const configSource = RED.nodes.getNode(config.config);
         if (!configSource) {
             node.error("Configuration node not found");
@@ -28,63 +23,45 @@ module.exports = function(RED) {
         }
         node.configNode = configSource;
 
-        // Expose connection fields as live getters so a config-node redeploy
-        // is reflected immediately instead of leaving workers with stale
-        // copies (#60).
+        // Live getters (#60) — config-node field edits are reflected
+        // immediately instead of leaving workers with stale copies.
         Object.defineProperties(node, {
             host:   { get: () => node.configNode.host,   configurable: true },
             family: { get: () => node.configNode.family, configurable: true }
         });
 
-        // Register with config node for event forwarding
         node.configNode.registerUser(node);
-
-        // Initialize status
         node.status(STATUSES.ready);
 
         node.on("goodwe:error", function(err) {
             node.warn(`Protocol error: ${err.message}`);
         });
 
-        /**
-         * Perform device info read
-         * @param {Object} msg - Input message
-         * @param {Function} send - Send function
-         * @param {Function} done - Done function
-         */
         async function performInfoRead(msg, send, done) {
             try {
-                // Validate host configuration
                 if (!node.host || node.host === "") {
                     const err = new Error("Invalid host address");
                     err.code = "INVALID_HOST";
                     throw enhanceError(err, { host: node.host });
                 }
 
-                // Get shared protocol handler from config node
                 const protocolHandler = node.configNode.getProtocolHandler();
+                node.status({ fill: "blue", shape: "dot", text: "reading info..." });
 
-                // Update status
-                node.status({ fill: "blue", shape: "dot", text: "reading info..." }); // bespoke text; reads device-info, not runtime data
-
-                // Read device info from inverter
                 const deviceInfo = await protocolHandler.readDeviceInfo();
-
-                // Add family from config (not always in the response)
+                // The AA55 device-info reply doesn't carry family — supply
+                // it from config so downstream consumers get a full record.
                 deviceInfo.family = node.family;
 
-                // Preserve original message properties (except payload)
                 const outputMsg = Object.assign({}, msg);
                 outputMsg.payload = deviceInfo;
                 outputMsg.topic = "goodwe/device_info";
-                // Canonical worker-node metadata (#65).
                 outputMsg.timestamp = new Date().toISOString();
                 outputMsg.inverter = {
                     family: node.family,
                     host: node.host
                 };
 
-                // Success status (transient ok → ready after STATUS_RESET_MS).
                 setTransientStatus(node);
 
                 send(outputMsg);
@@ -100,31 +77,22 @@ module.exports = function(RED) {
             }
         }
 
-        /**
-         * Handle incoming messages
-         */
         node.on("input", function(msg, send, done) {
-            // Fallback for Node-RED pre-1.0
+            // Fallback for Node-RED pre-1.0 where send/done were not supplied.
             send = send || function() { node.send.apply(node, arguments); };
             done = done || function(err) { if (err) node.error(err, msg); };
 
             performInfoRead(msg, send, done);
         });
 
-        /**
-         * Cleanup on node close
-         */
         node.on("close", function(done) {
-            // Deregister from config node
             if (node.configNode) {
                 node.configNode.deregisterUser(node);
             }
-
             node.status({});
             done();
         });
     }
 
-    // Register the node
     RED.nodes.registerType("goodwe-info", GoodWeInfoNode);
 };

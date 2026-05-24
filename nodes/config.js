@@ -11,15 +11,10 @@ const { ProtocolHandler } = require("../lib/protocol.js");
 module.exports = function(RED) {
     "use strict";
 
-    /**
-     * GoodWe Configuration Node
-     * @param {Object} config - Node configuration from editor
-     */
     function GoodWeConfigNode(config) {
         RED.nodes.createNode(this, config);
         const self = this;
 
-        // Store configuration
         this.host = config.host;
         this.port = config.port || 8899;
         this.protocol = config.protocol || "udp";
@@ -29,14 +24,9 @@ module.exports = function(RED) {
         this.commAddr = config.commAddr || "auto";
         this.keepAlive = config.keepAlive === undefined ? true : config.keepAlive;
 
-        // Connection state
         this.protocolHandler = null;
         this.users = [];
 
-        /**
-         * Get connection configuration
-         * @returns {Object} Connection configuration object
-         */
         this.getConfig = function() {
             return {
                 host: self.host,
@@ -50,11 +40,8 @@ module.exports = function(RED) {
             };
         };
 
-        /**
-         * Get or create the shared ProtocolHandler instance.
-         * The handler is created lazily on first call.
-         * @returns {Object} ProtocolHandler instance
-         */
+        // Lazy: handler is created on first call and shared by all registered
+        // worker nodes. Status/error events fan out to every user.
         this.getProtocolHandler = function() {
             if (!self.protocolHandler) {
                 self.protocolHandler = new ProtocolHandler({
@@ -67,7 +54,6 @@ module.exports = function(RED) {
                     commAddr: self.commAddr
                 });
 
-                // Forward events to registered user nodes
                 self.protocolHandler.on("status", (status) => {
                     self.users.forEach(node => node.emit("goodwe:status", status));
                 });
@@ -78,38 +64,22 @@ module.exports = function(RED) {
             return self.protocolHandler;
         };
 
-        /**
-         * Register a dependent node
-         * @param {Object} node - Node-RED node instance
-         */
         this.registerUser = function(node) {
             self.users.push(node);
         };
 
-        /**
-         * Deregister a dependent node
-         * @param {Object} node - Node-RED node instance
-         */
         this.deregisterUser = function(node) {
             self.users = self.users.filter(u => u.id !== node.id);
         };
 
-        /**
-         * Cleanup on node close.
-         *
-         * Sequence (#71):
-         * 1. Emit `goodwe:shutdown` to every registered worker so they can
-         *    cancel polling intervals before we tear down the handler. Doing
-         *    this first prevents a ghost tick from racing with disconnect()
-         *    and re-creating a handler post-close.
-         * 2. Disconnect the ProtocolHandler with a 2000ms safety timeout.
-         *    Node 24+'s dgram.close() can throw "Not running" on unbound
-         *    sockets (already handled in lib/protocol.js for discovery); for
-         *    a wedged TCP socket the underlying socket.end() callback may
-         *    never fire, which previously hung Node-RED's deploy.
-         */
+        // Close sequence (#71):
+        // 1. Emit `goodwe:shutdown` BEFORE disconnect — workers cancel polling
+        //    intervals first, so a ghost tick can't race with disconnect() and
+        //    re-create a handler post-close.
+        // 2. Disconnect with a 2000ms safety timeout. A wedged TCP socket's
+        //    end() callback may never fire, which previously hung Node-RED's
+        //    deploy. The race+swallow keeps done() guaranteed.
         this.on("close", async function(done) {
-            // Signal users first so polling stops before we destroy the handler.
             for (const node of self.users) {
                 try { node.emit("goodwe:shutdown"); } catch (_e) { /* ignore */ }
             }
@@ -122,8 +92,7 @@ module.exports = function(RED) {
                         new Promise(resolve => setTimeout(resolve, DISCONNECT_TIMEOUT_MS))
                     ]);
                 } catch (_e) {
-                    // Swallow — close path must always call done() so the
-                    // Node-RED deploy completes.
+                    // done() must always be called so the deploy completes.
                 }
                 self.protocolHandler = null;
             }
@@ -132,6 +101,5 @@ module.exports = function(RED) {
         });
     }
 
-    // Register the configuration node
     RED.nodes.registerType("goodwe-config", GoodWeConfigNode);
 };
