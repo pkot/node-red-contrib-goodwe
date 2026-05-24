@@ -16,6 +16,14 @@ We aim to acknowledge reports within 7 days.
 
 Only the latest released minor version receives security fixes.
 
+## Dependency vulnerabilities
+
+This package ships with **zero production dependencies** (`"dependencies": {}` in package.json), so users installing via `npm install node-red-contrib-goodwe` carry no third-party code from this project.
+
+`npm audit` on a fresh clone reports vulnerabilities, but every one is in a **dev-only transitive dependency** under `node-red`, `node-red-node-test-helper`, `jest`, or `eslint`. We hold these in check via the `overrides` block in `package.json` (qs, path-to-regexp 0.1.x, nise, picomatch, brace-expansion, ip-address, diff).
+
+A residual handful of advisories come from inside the **bundled `npm@10.9.8`** distribution that `@node-red/registry` pre-installs (`node_modules/npm/node_modules/*`). These are baked into npm's release tarball and cannot be moved by this repo's overrides; they will clear once node-red ships a release built against a newer registry / bundled npm. They do not affect end users (zero runtime deps) and they do not affect the Node-RED runtime path the worker nodes exercise — only the bundled-npm code that the registry uses for installing other Node-RED nodes from inside Node-RED.
+
 ## Trust Model
 
 This package speaks AA55 and Modbus TCP/RTU to GoodWe inverters over the local network. Both protocols use **error-detection codes (16-bit byte-sum checksum / CRC16), not authentication**. The full protocol spec is publicly documented in the upstream Python library, so anyone can fabricate syntactically valid frames.
