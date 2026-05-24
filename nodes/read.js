@@ -9,7 +9,8 @@ const {
     getSensorMetadata,
     STATUSES,
     setTransientStatus,
-    mapProtocolStatus
+    mapProtocolStatus,
+    parseSafeInteger
 } = require("../lib/node-helpers.js");
 const { enhanceError } = require("../lib/errors.js");
 
@@ -153,7 +154,10 @@ module.exports = function(RED) {
 
         // Node properties
         node.outputFormat = config.outputFormat || "flat";
-        node.polling = parseInt(config.polling) || 0;
+        // Defensive parse (#75). Polling cadence is in seconds; 0 = disabled.
+        // Sanity cap at 86400s (1 day) — beyond that the value almost
+        // certainly came from a malformed flow import.
+        node.polling = parseSafeInteger(config.polling, { default: 0, min: 0, max: 86400 });
 
         // Polling interval ID
         node.pollingInterval = null;

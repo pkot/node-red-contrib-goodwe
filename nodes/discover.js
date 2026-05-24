@@ -6,7 +6,7 @@
  */
 
 const protocol = require("../lib/protocol.js");
-const { STATUSES, setTransientStatus } = require("../lib/node-helpers.js");
+const { STATUSES, setTransientStatus, parseSafeInteger } = require("../lib/node-helpers.js");
 
 // Constants
 const DEFAULT_PORT = 8899;
@@ -23,7 +23,10 @@ module.exports = function(RED) {
         const node = this;
 
         // Node properties
-        node.timeout = parseInt(config.timeout) || 5000;
+        // Defensive parse (#75) — guard against scientific notation, negative
+        // values, etc. typed via flow import. Floor 100ms (sub-100ms is
+        // unrealistic for UDP round-trip), ceiling 5 min.
+        node.timeout = parseSafeInteger(config.timeout, { default: 5000, min: 100, max: 300000 });
         node.broadcastAddress = config.broadcastAddress || "255.255.255.255";
         
         // Track pending timers for cleanup
