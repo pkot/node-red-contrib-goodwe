@@ -6,6 +6,13 @@ on:
   pull_request:
     branches: [ main ]
 
+# Cancel superseded runs on the same PR — saves CI minutes when a fixup
+# commit lands while the previous run is still in flight. Push events on
+# main are kept since each commit is a real merge.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   test:
     runs-on: ubuntu-latest
