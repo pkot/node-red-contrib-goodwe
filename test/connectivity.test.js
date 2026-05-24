@@ -771,6 +771,29 @@ describe("discovery helper functions", () => {
         });
     });
 
+    describe("discovery diagnostics (#78)", () => {
+        const { discoverInverters } = require("../lib/protocol.js");
+
+        it("attaches a diagnostics object to the resolved array", async () => {
+            const result = await discoverInverters({ timeout: 100 });
+            expect(Array.isArray(result)).toBe(true);
+            expect(result.diagnostics).toEqual({
+                nonLocalSubnet: 0,
+                invalidFrame: 0,
+                parseFailures: 0
+            });
+        });
+
+        it("diagnostics is non-enumerable (Array shape preserved)", async () => {
+            const result = await discoverInverters({ timeout: 100 });
+            // JSON serialisation should not include the diagnostics field —
+            // callers that didn't know about it continue to see a plain Array.
+            expect(JSON.stringify(result)).toBe("[]");
+            // It is still readable directly.
+            expect(typeof result.diagnostics).toBe("object");
+        });
+    });
+
     describe("broadcast address validation (#76)", () => {
         const { isPrivateBroadcast, discoverInverters } = require("../lib/protocol.js");
 
