@@ -507,10 +507,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Documentation
 
-- **[Node Design Specification](./docs/NODE_DESIGN.md)** - Comprehensive design document for the GoodWe Node-RED node
-- **[Feature Analysis Document](./docs/FEATURE_ANALYSIS.md)** - Comprehensive analysis of the Python library features mapped to Node-RED
 - **[Contributing Guide](./CONTRIBUTING.md)** - How to contribute to this project
-- **[Changelog](./CHANGELOG.md)** - Version history and changes
+- **[Security Policy](./SECURITY.md)** - Trust model and vulnerability reporting
+- **[Testing Guide](./docs/TESTING.md)** - Test framework, mocking, and TDD workflow
 
 ## References
 
@@ -522,8 +521,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - 🐛 [Report bugs](https://github.com/pkot/node-red-contrib-goodwe/issues)
 - 💡 [Request features](https://github.com/pkot/node-red-contrib-goodwe/issues)
-- 📖 [Documentation](https://github.com/pkot/node-red-contrib-goodwe)
-
-## Status
-
-This project implements the core v1.0 feature set. See [TODO.md](./TODO.md) for completed phases and the post-v1.0 roadmap.
