@@ -32,12 +32,25 @@ nodes/
   info.js / .html      goodwe-info — device info (one-shot)
   discover.js / .html  goodwe-discover — LAN UDP scan; standalone (no config node)
 
-test/            jest specs; helper.init via node-red-node-test-helper
-docs/TESTING.md  Test framework guide (the only surviving doc; design docs
-                 were deleted in #115 — code+tests are the spec)
+test/
+  *.test.js       jest specs; helper.init via node-red-node-test-helper
+  README.md       Contributor quick-start (test patterns, debugging tips)
+
+docs/TESTING.md   Test framework + TDD/CI guide
+lib/README.md     Protocol API reference (shipped in npm tarball)
 ```
 
-When tempted to add a doc that describes code, **stop**. Code+tests are the spec. README/SECURITY/CONTRIBUTING/docs/TESTING are the only canonical docs.
+Canonical docs (don't add new ones without a clear reason):
+
+- `README.md` — user-facing
+- `SECURITY.md` — trust model + vulnerability reporting
+- `CONTRIBUTING.md` — human-contributor workflow
+- `docs/TESTING.md` — test framework guide
+- `lib/README.md` — protocol API reference (shipped to npm)
+- `test/README.md` — test quick-start
+- `AGENTS.md` — this file (AI-assistant operating guide)
+
+When tempted to add a doc that describes code, **stop**. Code+tests are the spec — the 9-file `docs/` cleanup in #115 deleted 5000 lines of stale design docs precisely because they described code that had since changed.
 
 ---
 
@@ -97,11 +110,7 @@ This is what the user expects me to do, in order:
 2. **Implement + add tests**. Tests for behaviour, not coverage padding.
 3. **Run tests + lint locally**: `npm test && npm run lint`
 4. **Self-review across 4 perspectives**: quality, architecture, security, error handling. Write this into the PR body — it's not theatre, it's the discipline that catches things.
-5. **Commit**:
-   - First line: imperative summary (≤72 chars)
-   - Body: WHY this is needed, not WHAT changed
-   - Reference the issue number
-   - End with `Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>` trailer
+5. **Commit**: follow `CONTRIBUTING.md`'s conventional commit format (`feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, `test:`). First line imperative, ≤72 chars. Body explains the WHY and references the issue (`Closes #N`). If your harness adds a `Co-Authored-By` trailer, that's fine — don't mandate it for assistants that don't.
 6. **Push + open PR**: `gh pr create --base main`
    - Body includes: Summary / Root cause (if bug) / Fix / Test plan checklist
 7. **Skip the `@copilot-pull-request-reviewer` mention**. Copilot auto-review is now enabled at the repo level — it self-assigns on PR open. The `@mention` was triggering the SWE agent, not the reviewer, throughout most of the session.
