@@ -127,16 +127,20 @@ module.exports = function(RED) {
             node.status({ fill: "red", shape: "ring", text: "config error" });
             return;
         }
-
-        // Get config from configuration node
-        const cfg = configSource.getConfig();
-        node.host = cfg.host;
-        node.port = cfg.port;
-        node.protocol = cfg.protocol;
-        node.family = cfg.family;
-        node.timeout = cfg.timeout;
-        node.retries = cfg.retries;
         node.configNode = configSource;
+
+        // Expose connection fields as live getters that always reflect the
+        // current config-node state. Previously these were copied at
+        // construction, so a config-node redeploy left workers with stale
+        // host/port/family until they were themselves redeployed (#60).
+        Object.defineProperties(node, {
+            host:     { get: () => node.configNode.host,     configurable: true },
+            port:     { get: () => node.configNode.port,     configurable: true },
+            protocol: { get: () => node.configNode.protocol, configurable: true },
+            family:   { get: () => node.configNode.family,   configurable: true },
+            timeout:  { get: () => node.configNode.timeout,  configurable: true },
+            retries:  { get: () => node.configNode.retries,  configurable: true }
+        });
 
         // Register with config node for event forwarding
         node.configNode.registerUser(node);

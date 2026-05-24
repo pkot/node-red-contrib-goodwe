@@ -147,6 +147,32 @@ describe("GoodWe Read Node", function () {
             });
         });
 
+        it("reflects live config-node fields, not a snapshot (#60)", function (done) {
+            const flow = createReadFlow({ host: "192.168.1.100", family: "ET" });
+
+            helper.load([configNode, readNode], flow, function () {
+                const c1 = helper.getNode("c1");
+                const n1 = helper.getNode("n1");
+                try {
+                    expect(n1.host).toBe("192.168.1.100");
+                    expect(n1.family).toBe("ET");
+
+                    // Simulate a config-node field change (the v1.0 flow when
+                    // a user edits the shared config). The worker must reflect
+                    // the new value immediately, not the snapshot taken at
+                    // worker construction.
+                    c1.host = "10.0.0.42";
+                    c1.family = "DT";
+
+                    expect(n1.host).toBe("10.0.0.42");
+                    expect(n1.family).toBe("DT");
+                    done();
+                } catch (err) {
+                    done(err);
+                }
+            });
+        });
+
         it("should initialize with default output format", function (done) {
             const flow = createReadFlow({ outputFormat: undefined });
 
