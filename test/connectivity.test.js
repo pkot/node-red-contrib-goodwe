@@ -590,6 +590,96 @@ describe("discovery helper functions", () => {
         }
     });
 
+    describe("family / model detection (#57)", () => {
+        const {
+            detectInverterFamily,
+            extractModelName,
+            extractSerialNumber,
+            parseDiscoveryResponse
+        } = require("../lib/protocol.js");
+        const { aa55Checksum } = require("../lib/modbus.js");
+
+        // Build an AA55 device-info frame whose payload starts with the given
+        // model and serial. Used to drive the parsers without a real inverter.
+        function buildAA55InfoFrame({ model = "GW5000-ETU", serial = "9402ETU000ABC123" } = {}) {
+            const payload = Buffer.alloc(53);
+            payload.write(model.padEnd(10, "\0").slice(0, 10), 0, "ascii");
+            payload.write(serial.padEnd(16, "\0").slice(0, 16), 10, "ascii");
+            // header: AA 55 src dst type1 type2 len
+            const header = Buffer.from([0xAA, 0x55, 0xC0, 0x7F, 0x01, 0x81, payload.length]);
+            const body = Buffer.concat([header, payload]);
+            const csum = Buffer.alloc(2);
+            csum.writeUInt16BE(aa55Checksum(body), 0);
+            return Buffer.concat([body, csum]);
+        }
+
+        it("classifies ET-family model names", () => {
+            expect(detectInverterFamily("GW5000-ETU")).toBe("ET");
+            expect(detectInverterFamily("GW10K-EHU")).toBe("ET");
+            expect(detectInverterFamily("GW3000-BTU")).toBe("ET");
+            // Platform-745 hybrids (NAH, ESA/EHA-G20)
+            expect(detectInverterFamily("GW10K-EHA-G20")).toBe("ET");
+            expect(detectInverterFamily("GW8K-NAH")).toBe("ET");
+        });
+
+        it("classifies DT-family model names (including recent KMT)", () => {
+            expect(detectInverterFamily("GW10K-DTU")).toBe("DT");
+            expect(detectInverterFamily("GW25KMT")).toBe("DT");        // 50K KMT support, upstream Mar 2026
+            expect(detectInverterFamily("GW3000-MS-30")).toBe("DT");
+        });
+
+        it("classifies ES-family model names", () => {
+            expect(detectInverterFamily("GW3000-ESU")).toBe("ES");
+            expect(detectInverterFamily("GW5000-EMU")).toBe("ES");
+        });
+
+        it("returns null for unknown/empty model strings (no false ET default)", () => {
+            expect(detectInverterFamily("Unknown")).toBeNull();
+            expect(detectInverterFamily("")).toBeNull();
+            expect(detectInverterFamily(null)).toBeNull();
+            expect(detectInverterFamily(undefined)).toBeNull();
+        });
+
+        it("is case-insensitive", () => {
+            expect(detectInverterFamily("gw5000-etu")).toBe("ET");
+            expect(detectInverterFamily("gw25kmt")).toBe("DT");
+        });
+
+        it("extractModelName / extractSerialNumber read the AA55 payload", () => {
+            const frame = buildAA55InfoFrame({ model: "GW8K-EHA", serial: "9402EHA000XYZ987" });
+            expect(extractModelName(frame)).toBe("GW8K-EHA");
+            expect(extractSerialNumber(frame)).toBe("9402EHA000XYZ987");
+        });
+
+        it("extract* return safe defaults on invalid frames", () => {
+            // Bad checksum
+            const bad = Buffer.from([0xAA, 0x55, 0xC0, 0x7F, 0x01, 0x81, 0x00, 0x00, 0x00]);
+            expect(extractModelName(bad)).toBe("");
+            expect(extractSerialNumber(bad)).toBe("UNKNOWN");
+            // Too short
+            expect(extractModelName(Buffer.from([]))).toBe("");
+            expect(extractSerialNumber(Buffer.from([]))).toBe("UNKNOWN");
+        });
+
+        it("parseDiscoveryResponse returns full inverter info from a valid frame", () => {
+            const frame = buildAA55InfoFrame({ model: "GW10K-DTU", serial: "9302DTU0001ABC22" });
+            const inv = parseDiscoveryResponse(frame, "192.168.1.50");
+            expect(inv).toEqual({
+                ip: "192.168.1.50",
+                port: 8899,
+                family: "DT",
+                modelName: "GW10K-DTU",
+                serialNumber: "9302DTU0001ABC22"
+            });
+        });
+
+        it("parseDiscoveryResponse returns null on invalid frames", () => {
+            expect(parseDiscoveryResponse(Buffer.from([]), "1.2.3.4")).toBeNull();
+            const bad = Buffer.from([0xAA, 0x55, 0xC0, 0x7F, 0x01, 0x81, 0x00, 0x00, 0x00]);
+            expect(parseDiscoveryResponse(bad, "1.2.3.4")).toBeNull();
+        });
+    });
+
     describe("source-IP filtering (#61)", () => {
         const { isLocalSubnet, ipv4ToInt } = require("../lib/protocol.js");
 
