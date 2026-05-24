@@ -276,7 +276,20 @@ module.exports = function(RED) {
             send = send || function() { node.send.apply(node, arguments); };
             done = done || function(err) { if (err) node.error(err, msg); };
 
-            performRead(msg, send, done);
+            // Reject concurrent input-driven reads. The protocol queue (#56)
+            // already serialises sendCommand, but a flood of injects would
+            // still queue an unbounded backlog; explicit drop with feedback
+            // is better UX. Polling sets isReading too — see below. (#77)
+            if (node.isReading) {
+                node.warn("Skipping read - previous read still in progress");
+                done();
+                return;
+            }
+            node.isReading = true;
+            performRead(msg, send, function(err) {
+                node.isReading = false;
+                done(err);
+            });
         });
 
         /**
@@ -304,8 +317,12 @@ module.exports = function(RED) {
                 }, (err) => {
                     node.isReading = false;
                     if (err) {
-                        node.warn(`Polling error: ${err.message}`);
-                        // Don't stop polling on error
+                        // Route polling failures through node.error so Catch
+                        // nodes fire (#77). Polling intentionally continues
+                        // on error — transient timeouts shouldn't stop the
+                        // schedule. The user can wire a Catch + delay/disable
+                        // flow if they want backoff.
+                        node.error(err, msg);
                     }
                 });
             }, intervalMs);
