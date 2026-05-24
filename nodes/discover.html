@@ -57,7 +57,11 @@
 <!-- Node Help Text -->
 <script type="text/html" data-help-name="goodwe-discover">
     <p>A dedicated Node-RED node for discovering GoodWe inverters on the local network.</p>
-    
+
+    <p><strong>Note:</strong> Unlike <code>goodwe-read</code> and <code>goodwe-info</code>, this node does <em>not</em> require a <code>goodwe-config</code> reference. Discovery operates without a known inverter — its job is to find them. Once you have an IP from the <code>devices[]</code> output, paste it into a <code>goodwe-config</code> node to wire up subsequent read/info operations.</p>
+
+    <p><strong>Security:</strong> By default the node rejects responses from outside your host's local IPv4 subnet (filters spoofed AA55 replies from off-segment hosts) and refuses to broadcast to non-private addresses. See <a href="https://github.com/pkot/node-red-contrib-goodwe/blob/main/SECURITY.md">SECURITY.md</a> for the full trust model and opt-out flags.</p>
+
     <h3>Configuration</h3>
     <dl class="message-properties">
         <dt>Name <span class="property-type">string</span></dt>
@@ -67,7 +71,7 @@
         <dd>Discovery timeout in milliseconds. Default is 5000ms (5 seconds). Minimum is 1000ms.</dd>
 
         <dt>Broadcast Address <span class="property-type">string</span></dt>
-        <dd>Broadcast address for discovery. Default is 255.255.255.255 (all networks). Advanced users can specify a specific broadcast address for their subnet.</dd>
+        <dd>Broadcast address for discovery. Default is 255.255.255.255 (limited broadcast — stays on the local segment). Advanced users can specify a directed broadcast for a specific subnet (e.g. <code>192.168.1.255</code>). Non-private addresses are rejected for safety; see SECURITY.md.</dd>
     </dl>
 
     <h3>Inputs</h3>
@@ -120,6 +124,19 @@
     topic: "goodwe/discover",
     timestamp: "2025-11-02T..."
 }</pre>
+
+    <h4>Wiring discover → config</h4>
+    <p>Each entry in <code>payload.devices[]</code> matches the field names a <code>goodwe-config</code> node expects (<code>host</code>, <code>port</code>, <code>protocol</code>, <code>family</code>), so a Function node can pick one and copy them into a new flow message — for example, to populate a debug panel or to drive subsequent reads through a manually-configured <code>goodwe-config</code>:</p>
+    <pre>// In a Function node after this discover node:
+const dev = msg.payload.devices[0];
+if (!dev) return null;
+msg.payload = {
+    host: dev.host,
+    port: dev.port,
+    protocol: dev.protocol,
+    family: dev.family
+};
+return msg;</pre>
 
     <h3>Status Updates</h3>
     <p>The node provides visual status feedback during discovery:</p>

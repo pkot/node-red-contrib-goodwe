@@ -202,10 +202,12 @@ The info node retrieves device identification and firmware information from the 
 
 The discover node finds GoodWe inverters on the local network using UDP broadcast.
 
+> Unlike the other worker nodes, **`goodwe-discover` does not require a `goodwe-config`** — discovery operates without a known inverter (its job is to find one). Once you have an IP from `payload.devices[]`, paste it into a `goodwe-config` node for subsequent reads.
+
 **Node Settings:**
 - **Name**: Node display name
 - **Timeout**: Discovery timeout in milliseconds (default: 5000)
-- **Broadcast Address**: Network broadcast address (default: 255.255.255.255)
+- **Broadcast Address**: Network broadcast address. Default `255.255.255.255` (limited broadcast — stays on the local segment). Directed broadcasts like `192.168.1.255` are accepted; non-private addresses are rejected for safety (see [SECURITY.md](./SECURITY.md)).
 
 **Input:** Any message triggers discovery.
 
