@@ -95,12 +95,36 @@ module.exports = function(RED) {
         };
 
         /**
-         * Cleanup on node close
+         * Cleanup on node close.
+         *
+         * Sequence (#71):
+         * 1. Emit `goodwe:shutdown` to every registered worker so they can
+         *    cancel polling intervals before we tear down the handler. Doing
+         *    this first prevents a ghost tick from racing with disconnect()
+         *    and re-creating a handler post-close.
+         * 2. Disconnect the ProtocolHandler with a 2000ms safety timeout.
+         *    Node 24+'s dgram.close() can throw "Not running" on unbound
+         *    sockets (already handled in lib/protocol.js for discovery); for
+         *    a wedged TCP socket the underlying socket.end() callback may
+         *    never fire, which previously hung Node-RED's deploy.
          */
         this.on("close", async function(done) {
-            // Disconnect the protocol handler
+            // Signal users first so polling stops before we destroy the handler.
+            for (const node of self.users) {
+                try { node.emit("goodwe:shutdown"); } catch (_e) { /* ignore */ }
+            }
+
             if (self.protocolHandler) {
-                await self.protocolHandler.disconnect();
+                const DISCONNECT_TIMEOUT_MS = 2000;
+                try {
+                    await Promise.race([
+                        self.protocolHandler.disconnect(),
+                        new Promise(resolve => setTimeout(resolve, DISCONNECT_TIMEOUT_MS))
+                    ]);
+                } catch (_e) {
+                    // Swallow — close path must always call done() so the
+                    // Node-RED deploy completes.
+                }
                 self.protocolHandler = null;
             }
             self.users = [];
