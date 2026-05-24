@@ -466,6 +466,47 @@ describe("discovery helper functions", () => {
         }
     });
 
+    describe("source-IP filtering (#61)", () => {
+        const { isLocalSubnet, ipv4ToInt } = require("../lib/protocol.js");
+
+        it("ipv4ToInt parses valid dotted-quad addresses", () => {
+            expect(ipv4ToInt("0.0.0.0")).toBe(0);
+            expect(ipv4ToInt("127.0.0.1")).toBe(0x7F000001);
+            expect(ipv4ToInt("192.168.1.100")).toBe(0xC0A80164);
+            expect(ipv4ToInt("255.255.255.255")).toBe(0xFFFFFFFF >>> 0);
+        });
+
+        it("ipv4ToInt rejects malformed input", () => {
+            expect(ipv4ToInt("")).toBeNull();
+            expect(ipv4ToInt("not-an-ip")).toBeNull();
+            expect(ipv4ToInt("1.2.3")).toBeNull();
+            expect(ipv4ToInt("1.2.3.4.5")).toBeNull();
+            expect(ipv4ToInt("256.0.0.1")).toBeNull();
+            expect(ipv4ToInt("-1.0.0.0")).toBeNull();
+            expect(ipv4ToInt("1.2.3.4 ")).toBeNull(); // trailing space → NaN per part
+            expect(ipv4ToInt(null)).toBeNull();
+            expect(ipv4ToInt(undefined)).toBeNull();
+        });
+
+        it("isLocalSubnet accepts loopback addresses", () => {
+            expect(isLocalSubnet("127.0.0.1")).toBe(true);
+            expect(isLocalSubnet("127.255.255.254")).toBe(true);
+        });
+
+        it("isLocalSubnet rejects clearly remote addresses", () => {
+            // These are public IPs unlikely to be in any test host's local
+            // subnet. Anchored by RFC 6890 / IANA allocations.
+            expect(isLocalSubnet("8.8.8.8")).toBe(false);
+            expect(isLocalSubnet("1.1.1.1")).toBe(false);
+        });
+
+        it("isLocalSubnet returns false for malformed input (fail-closed)", () => {
+            expect(isLocalSubnet("")).toBe(false);
+            expect(isLocalSubnet("not-an-ip")).toBe(false);
+            expect(isLocalSubnet(null)).toBe(false);
+        });
+    });
+
     it("should parse device info from AA55 payload", () => {
         // Build a mock device info payload
         const payload = Buffer.alloc(53);
