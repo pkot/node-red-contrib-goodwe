@@ -7,7 +7,9 @@
 
 const helper = require("node-red-node-test-helper");
 const discoverNode = require("../nodes/discover.js");
-const protocol = require("../lib/protocol.js");
+// nodes/discover.js imports from lib/discovery.js (#80 split). Spy on that
+// same module instance so the mock intercepts the production call.
+const protocol = require("../lib/discovery.js");
 
 helper.init(require.resolve("node-red"));
 
