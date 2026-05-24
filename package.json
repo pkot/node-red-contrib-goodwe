@@ -10,6 +10,16 @@
     "pv",
     "photovoltaic"
   ],
+  "files": [
+    "nodes/",
+    "lib/",
+    "examples/",
+    "docs/CONFIGURATION.md",
+    "docs/README.md",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
   "scripts": {
     "test": "jest",
     "lint": "eslint nodes lib test --ext .js",
@@ -22,6 +32,7 @@
     "url": "https://github.com/pkot/node-red-contrib-goodwe.git"
   },
   "node-red": {
+    "version": ">=3.0.0",
     "nodes": {
       "goodwe-config": "nodes/config.js",
       "goodwe-read": "nodes/read.js",
