@@ -88,7 +88,7 @@ describe("ProtocolHandler", () => {
             
             try {
                 await handler.connect();
-                fail("Should have thrown error");
+                throw new Error("Should have thrown error");
             } catch (err) {
                 expect(err.message).toContain("Unsupported protocol");
             }
@@ -170,7 +170,7 @@ describe("ProtocolHandler", () => {
             
             try {
                 await handler.sendCommand(Buffer.from([0x00]));
-                fail("Should have thrown error");
+                throw new Error("Should have thrown error");
             } catch (err) {
                 expect(err.message).toBe("Not connected");
             }
@@ -187,7 +187,7 @@ describe("ProtocolHandler", () => {
             
             try {
                 await handler.sendCommand(Buffer.from([0x00]));
-                fail("Should have timed out");
+                throw new Error("Should have timed out");
             } catch (err) {
                 // May get TIMEOUT or EPERM depending on environment
                 expect(["TIMEOUT", "EPERM"]).toContain(err.code);
@@ -212,7 +212,7 @@ describe("ProtocolHandler", () => {
             
             try {
                 await handler.sendCommandWithRetry(Buffer.from([0x00]));
-                fail("Should have failed after retries");
+                throw new Error("Should have failed after retries");
             } catch (err) {
                 const elapsed = Date.now() - startTime;
                 // Should have tried multiple times with backoff
@@ -257,11 +257,8 @@ describe("ProtocolHandler", () => {
                 timeout: 100
             });
             
-            let errorEmitted = false;
-            
             handler.on("error", (err) => {
                 expect(err).toBeDefined();
-                errorEmitted = true;
             });
             
             handler.connect()
@@ -320,7 +317,7 @@ describe("ProtocolHandler", () => {
             
             try {
                 await handler.connect();
-                fail("Should have timed out");
+                throw new Error("Should have timed out");
             } catch (err) {
                 expect(err.message).toContain("timeout");
             }

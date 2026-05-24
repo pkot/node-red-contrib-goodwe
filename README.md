@@ -49,13 +49,13 @@ npm install node-red-contrib-goodwe
 The GoodWe node requires a configuration node to define connection settings.
 
 1. Create a configuration node:
-   - In the Node-RED editor, add a **goodwe** node to your flow
+   - In the Node-RED editor, add a **goodwe-read** (or **goodwe-info**) node to your flow
    - In the node settings, click the pencil icon next to **Configuration** to create a new config node
    - Configure the connection settings (host, port, protocol, family)
    - Click **Add** to save the configuration node
 
 2. Reuse the configuration:
-   - Additional **goodwe** nodes can reference the same configuration node
+   - Additional GoodWe nodes can reference the same configuration node
    - Changes to the config node automatically apply to all nodes using it
 
 **Benefits:**
@@ -72,7 +72,6 @@ This package provides the following Node-RED nodes:
 - **goodwe-read** - Read runtime sensor data with multiple output formats and auto-polling
 - **goodwe-info** - Retrieve device identification and firmware information
 - **goodwe-discover** - Discover GoodWe inverters on the local network via UDP broadcast
-- **goodwe** - Legacy unified node (deprecated, use the dedicated nodes above)
 
 ### Configuration Node Settings
 
@@ -363,99 +362,6 @@ Reading only specific sensors using array format:
 ]
 ```
 
-#### Example 4: Legacy Unified Node (Basic Usage)
-
-```json
-[
-    {
-        "id": "config-node",
-        "type": "goodwe-config",
-        "name": "Living Room Inverter",
-        "host": "192.168.1.100",
-        "port": "8899",
-        "protocol": "udp",
-        "family": "ET",
-        "timeout": 1000,
-        "retries": 3
-    },
-    {
-        "id": "inject-node",
-        "type": "inject",
-        "name": "Read every 60s",
-        "repeat": "60",
-        "payload": "read",
-        "wires": [["goodwe-node"]]
-    },
-    {
-        "id": "goodwe-node",
-        "type": "goodwe",
-        "name": "Read Inverter",
-        "config": "config-node",
-        "wires": [["debug-node"]]
-    },
-    {
-        "id": "debug-node",
-        "type": "debug",
-        "name": "Show Data"
-    }
-]
-```
-
-#### Example 5: Legacy Unified Node (Multiple Nodes Sharing Configuration)
-
-```json
-[
-    {
-        "id": "config-node",
-        "type": "goodwe-config",
-        "name": "Shared Inverter Config",
-        "host": "192.168.1.100",
-        "port": "8899",
-        "protocol": "udp",
-        "family": "ET"
-    },
-    {
-        "id": "inject-read",
-        "type": "inject",
-        "name": "Read Data",
-        "repeat": "60",
-        "payload": "read",
-        "wires": [["goodwe-read"]]
-    },
-    {
-        "id": "goodwe-read",
-        "type": "goodwe",
-        "name": "Read Runtime Data",
-        "config": "config-node",
-        "wires": [["debug-data"]]
-    },
-    {
-        "id": "inject-discover",
-        "type": "inject",
-        "name": "Discover",
-        "payload": "discover",
-        "wires": [["goodwe-discover"]]
-    },
-    {
-        "id": "goodwe-discover",
-        "type": "goodwe",
-        "name": "Discover Inverters",
-        "config": "config-node",
-        "wires": [["debug-discover"]]
-    },
-    {
-        "id": "debug-data",
-        "type": "debug",
-        "name": "Runtime Data"
-    },
-    {
-        "id": "debug-discover",
-        "type": "debug",
-        "name": "Discovery Results"
-    }
-]
-```
-
 See the [examples](./examples/) folder for more usage examples.
 
 ## Supported Inverter Families
@@ -500,7 +406,7 @@ npm test -- --watch
 npm test -- --coverage
 
 # Run specific test file
-npm test -- test/goodwe.test.js
+npm test -- test/read-node.test.js
 
 # Run linter
 npm run lint
@@ -528,8 +434,6 @@ node-red-contrib-goodwe/
 │   ├── info.html      # Info node UI
 │   ├── discover.js    # Network discovery
 │   ├── discover.html  # Discover node UI
-│   ├── goodwe.js      # Legacy unified node
-│   ├── goodwe.html    # Legacy node UI
 │   └── icons/         # Node icons
 ├── lib/               # Shared libraries
 │   ├── protocol.js    # Protocol handler (UDP/TCP/Modbus)

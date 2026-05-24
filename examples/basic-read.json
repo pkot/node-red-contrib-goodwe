@@ -7,6 +7,17 @@
         "info": "Example flow for reading data from a GoodWe inverter"
     },
     {
+        "id": "goodwe-config",
+        "type": "goodwe-config",
+        "name": "My GoodWe Inverter",
+        "host": "192.168.1.100",
+        "port": "8899",
+        "protocol": "udp",
+        "family": "ET",
+        "timeout": "1000",
+        "retries": "3"
+    },
+    {
         "id": "inject-read",
         "type": "inject",
         "z": "example-flow",
@@ -27,19 +38,17 @@
         "y": 100,
         "wires": [
             [
-                "goodwe-node"
+                "read-node"
             ]
         ]
     },
     {
-        "id": "goodwe-node",
-        "type": "goodwe",
+        "id": "read-node",
+        "type": "goodwe-read",
         "z": "example-flow",
-        "name": "My GoodWe Inverter",
-        "host": "192.168.1.100",
-        "port": "8899",
-        "protocol": "udp",
-        "family": "ET",
+        "name": "Read Runtime Data",
+        "config": "goodwe-config",
+        "format": "object",
         "x": 350,
         "y": 100,
         "wires": [

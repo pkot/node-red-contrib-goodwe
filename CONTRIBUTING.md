@@ -55,14 +55,13 @@ npm test -- --watch
 npm test -- --coverage
 
 # Run specific test file
-npm test -- test/goodwe.test.js
+npm test -- test/read-node.test.js
 ```
 
 **Testing Resources:**
 - 📖 **Quick Start**: [test/README.md](./test/README.md) - Common patterns and utilities
 - 📖 **Full Guide**: [docs/TESTING.md](./docs/TESTING.md) - Comprehensive testing guide
 - 🧪 **Test Utilities**: [test/test-utils.js](./test/test-utils.js) - Helper functions
-- 🎭 **Mock Data**: [test/fixtures/mock-inverter-data.js](./test/fixtures/mock-inverter-data.js) - Sample responses
 
 ### Code Quality
 
@@ -88,12 +87,19 @@ npm test -- --coverage
 
 ```
 node-red-contrib-goodwe/
-├── nodes/              # Node implementation
-│   ├── goodwe.js      # Node runtime logic (backend)
-│   ├── goodwe.html    # Node UI and help (frontend)
-│   └── icons/         # Node icons
-├── test/              # Test files
-│   └── goodwe.test.js # Main test suite
+├── nodes/              # Node implementations
+│   ├── config.{js,html}    # Shared connection config node
+│   ├── read.{js,html}      # Runtime sensor data
+│   ├── info.{js,html}      # Device info retrieval
+│   ├── discover.{js,html}  # Network discovery
+│   └── icons/              # Node icons
+├── lib/                # Shared libraries
+│   ├── protocol.js     # UDP/TCP/Modbus protocol handler
+│   ├── sensors.js      # Per-family sensor definitions
+│   ├── modbus.js       # Modbus frame construction
+│   ├── errors.js       # Error taxonomy and suggestions
+│   └── node-helpers.js # Shared node utilities
+├── test/               # Test suite
 ├── examples/          # Example flows
 │   └── basic-read.json
 ├── .github/           # GitHub Actions workflows
@@ -128,16 +134,20 @@ node-red-contrib-goodwe/
 
 When working on the node implementation:
 
-- **goodwe.js**: Contains the Node-RED runtime logic
+- **`nodes/*.js`**: Contains the Node-RED runtime logic
   - Use asynchronous operations with proper error handling
   - Follow Node-RED node best practices
   - Update node status appropriately (connecting, connected, error, etc.)
   - Clean up resources in the `close` event handler
 
-- **goodwe.html**: Contains the editor UI and help documentation
+- **`nodes/*.html`**: Contains the editor UI and help documentation
   - Follow Node-RED UI conventions
   - Provide clear, helpful configuration options
   - Include comprehensive help text with examples
+
+- **`lib/*.js`**: Contains protocol and shared utility code
+  - Should not depend on Node-RED runtime APIs
+  - Cover with unit tests independent of `node-red-node-test-helper`
 
 ## Coding Standards
 
@@ -238,7 +248,7 @@ When contributing, please update:
 - **README.md**: For user-facing changes
 - **CONTRIBUTING.md**: For developer workflow changes
 - **Code comments**: For complex logic
-- **Help text in goodwe.html**: For node configuration changes
+- **Help text in `nodes/*.html`**: For node configuration changes
 
 ## Getting Help
 

@@ -10,11 +10,10 @@
     "pv",
     "photovoltaic"
   ],
-  "main": "nodes/goodwe.js",
   "scripts": {
     "test": "jest",
-    "lint": "eslint nodes/**/*.js test/**/*.js",
-    "lint:fix": "eslint --fix nodes/**/*.js test/**/*.js"
+    "lint": "eslint nodes lib test --ext .js",
+    "lint:fix": "eslint --fix nodes lib test --ext .js"
   },
   "author": "Paweł Kot",
   "license": "MIT",
@@ -24,7 +23,6 @@
   },
   "node-red": {
     "nodes": {
-      "goodwe": "nodes/goodwe.js",
       "goodwe-config": "nodes/config.js",
       "goodwe-read": "nodes/read.js",
       "goodwe-discover": "nodes/discover.js",

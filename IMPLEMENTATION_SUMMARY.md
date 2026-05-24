@@ -1,5 +1,7 @@
 # Implementation Summary: Core Connectivity and Inverter Discovery
 
+> **Historical note**: This document describes an earlier implementation phase when the package shipped a single unified `goodwe` node. That legacy node has since been removed; equivalent functionality is now provided by the dedicated `goodwe-read`, `goodwe-info`, `goodwe-discover`, and `goodwe-config` nodes. The protocol/library code described below still lives in `lib/`.
+
 ## Overview
 This implementation adds core connectivity features and inverter discovery capabilities to the Node-RED GoodWe node, enabling communication with GoodWe inverters over UDP and TCP protocols.
 
