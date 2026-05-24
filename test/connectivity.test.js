@@ -235,6 +235,52 @@ describe("ProtocolHandler", () => {
             expect(results.map(b => b[0])).toEqual([1, 2, 3]);
         });
 
+        it("rejects fast when UDP socket emits 'error' mid-request (#58)", async () => {
+            const EventEmitter = require("events");
+            const handler = new ProtocolHandler({ protocol: "udp", timeout: 5000 });
+            const fake = new EventEmitter();
+            fake.send = () => { /* never invokes callback */ };
+            handler.socket = fake;
+
+            const pending = handler.sendCommand(Buffer.from([0x01]));
+            // Defer the error emit a tick so the request-scoped listener is
+            // attached first.
+            setImmediate(() => {
+                const e = new Error("ENETUNREACH");
+                e.code = "ENETUNREACH";
+                fake.emit("error", e);
+            });
+
+            await expect(pending).rejects.toThrow("ENETUNREACH");
+            expect(handler.consecutiveFailures).toBeGreaterThan(0);
+            // Long-lived listeners (if any) plus the constructor's default
+            // no-op should remain.
+            expect(fake.listenerCount("error")).toBe(0);
+        });
+
+        it("rejects fast when TCP socket emits 'close' mid-request (#58)", async () => {
+            const EventEmitter = require("events");
+            const handler = new ProtocolHandler({ protocol: "tcp", timeout: 5000 });
+            const fake = new EventEmitter();
+            fake.write = () => { /* never delivers data */ };
+            handler.socket = fake;
+
+            const pending = handler.sendCommand(Buffer.from([0x01]));
+            setImmediate(() => fake.emit("close"));
+
+            await expect(pending).rejects.toThrow(/closed during request/);
+            expect(fake.listenerCount("data")).toBe(0);
+            expect(fake.listenerCount("close")).toBe(0);
+            expect(fake.listenerCount("error")).toBe(0);
+        });
+
+        it("does not crash when 'error' is emitted with no user listener (#58)", () => {
+            const handler = new ProtocolHandler();
+            // No external listener attached. Emit should not throw — the
+            // constructor installed a default no-op consumer.
+            expect(() => handler.emit("error", new Error("transient"))).not.toThrow();
+        });
+
         it("should continue serving subsequent calls after one rejects", async () => {
             // Failures must not poison the queue.
             const handler = new ProtocolHandler({ protocol: "udp" });
