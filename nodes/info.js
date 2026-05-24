@@ -23,12 +23,15 @@ module.exports = function(RED) {
             node.status({ fill: "red", shape: "ring", text: "config error" });
             return;
         }
-
-        // Get config from configuration node
-        const cfg = configSource.getConfig();
-        node.host = cfg.host;
-        node.family = cfg.family;
         node.configNode = configSource;
+
+        // Expose connection fields as live getters so a config-node redeploy
+        // is reflected immediately instead of leaving workers with stale
+        // copies (#60).
+        Object.defineProperties(node, {
+            host:   { get: () => node.configNode.host,   configurable: true },
+            family: { get: () => node.configNode.family, configurable: true }
+        });
 
         // Register with config node for event forwarding
         node.configNode.registerUser(node);
