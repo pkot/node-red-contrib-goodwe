@@ -678,6 +678,83 @@ describe("GoodWe Read Node", function () {
         });
     });
 
+    describe("Polling errors route through node.error (#77)", function () {
+
+        it("polling failure invokes node.error so Catch nodes fire", function (done) {
+            mockReadRuntimeData.mockRejectedValue(new Error("simulated polling failure"));
+            const flow = createReadFlow({ polling: 1 });
+
+            helper.load([configNode, readNode], flow, function () {
+                const n1 = helper.getNode("n1");
+
+                // Capture the node.error invocations.
+                let errCalls = 0;
+                let lastErr;
+                const origError = n1.error.bind(n1);
+                n1.error = function(err, msg) {
+                    errCalls++;
+                    lastErr = err;
+                    return origError(err, msg);
+                };
+
+                // Wait for the first polling tick (interval is 1s).
+                setTimeout(() => {
+                    try {
+                        expect(errCalls).toBeGreaterThan(0);
+                        expect(lastErr).toBeDefined();
+                        expect(lastErr.message).toBe("simulated polling failure");
+                        mockReadRuntimeData.mockResolvedValue(MOCK_ET_RUNTIME_DATA); // restore
+                        done();
+                    } catch (e) {
+                        done(e);
+                    }
+                }, 1300);
+            });
+        });
+    });
+
+    describe("Input-time concurrency guard (#77)", function () {
+
+        it("rejects a second input while a first is in flight", function (done) {
+            // Make the first read slow so the second arrives while inflight.
+            let first = true;
+            mockReadRuntimeData.mockImplementation(() => {
+                if (first) {
+                    first = false;
+                    return new Promise(r => setTimeout(() => r(MOCK_ET_RUNTIME_DATA), 200));
+                }
+                return Promise.resolve(MOCK_ET_RUNTIME_DATA);
+            });
+
+            const flow = createReadFlow();
+            helper.load([configNode, readNode], flow, function () {
+                const n1 = helper.getNode("n1");
+                const n2 = helper.getNode("n2");
+
+                let warns = 0;
+                const origWarn = n1.warn.bind(n1);
+                n1.warn = function(msg) { warns++; return origWarn(msg); };
+
+                let outputs = 0;
+                n2.on("input", () => { outputs++; });
+
+                n1.receive({ payload: true });
+                n1.receive({ payload: true }); // arrives during first's 200ms wait
+
+                setTimeout(() => {
+                    try {
+                        expect(warns).toBeGreaterThanOrEqual(1); // second was dropped with a warn
+                        expect(outputs).toBe(1);                  // only first produced output
+                        mockReadRuntimeData.mockReset().mockResolvedValue(MOCK_ET_RUNTIME_DATA);
+                        done();
+                    } catch (e) {
+                        done(e);
+                    }
+                }, 500);
+            });
+        });
+    });
+
     describe("Error Handling", function () {
 
         it("should handle read errors gracefully", function (done) {
