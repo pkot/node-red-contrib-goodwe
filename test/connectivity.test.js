@@ -339,6 +339,46 @@ describe("ProtocolHandler", () => {
     });
 
     describe("sendCommandWithRetry", () => {
+        it("makes at least one attempt even with retries=0 (#62)", async () => {
+            // Regression: retries=0 previously made the for-loop body never
+            // run, returning undefined. The caller's downstream parser then
+            // crashed on "Cannot read properties of undefined". Now: a single
+            // attempt is always made; failures throw the actual error.
+            const handler = new ProtocolHandler({ protocol: "udp", retries: 0 });
+            let calls = 0;
+            handler._sendCommandImpl = async () => {
+                calls++;
+                throw new Error("inner failure");
+            };
+            await expect(handler.sendCommandWithRetry(Buffer.from([0x00])))
+                .rejects.toThrow("inner failure");
+            expect(calls).toBe(1);
+        });
+
+        it("coerces non-numeric retries to a safe floor (#62)", async () => {
+            const handler = new ProtocolHandler({ protocol: "udp", retries: "abc" });
+            let calls = 0;
+            handler._sendCommandImpl = async () => {
+                calls++;
+                throw new Error("inner failure");
+            };
+            await expect(handler.sendCommandWithRetry(Buffer.from([0x00])))
+                .rejects.toThrow("inner failure");
+            expect(calls).toBe(1);
+        });
+
+        it("honors numeric string retries (#62)", async () => {
+            const handler = new ProtocolHandler({ protocol: "udp", retries: "2" });
+            let calls = 0;
+            handler._sendCommandImpl = async () => {
+                calls++;
+                throw new Error("inner failure");
+            };
+            await expect(handler.sendCommandWithRetry(Buffer.from([0x00])))
+                .rejects.toThrow("inner failure");
+            expect(calls).toBe(2);
+        });
+
         it("should retry on failure", async () => {
             const handler = new ProtocolHandler({ 
                 protocol: "udp",
