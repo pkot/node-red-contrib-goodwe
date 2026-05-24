@@ -6,6 +6,7 @@
  */
 
 const { enhanceError } = require("../lib/errors.js");
+const { STATUSES, setTransientStatus } = require("../lib/node-helpers.js");
 
 module.exports = function(RED) {
     "use strict";
@@ -22,7 +23,7 @@ module.exports = function(RED) {
         const configSource = RED.nodes.getNode(config.config);
         if (!configSource) {
             node.error("Configuration node not found");
-            node.status({ fill: "red", shape: "ring", text: "config error" });
+            node.status(STATUSES.configError);
             return;
         }
         node.configNode = configSource;
@@ -39,7 +40,7 @@ module.exports = function(RED) {
         node.configNode.registerUser(node);
 
         // Initialize status
-        node.status({ fill: "grey", shape: "ring", text: "ready" });
+        node.status(STATUSES.ready);
 
         node.on("goodwe:error", function(err) {
             node.warn(`Protocol error: ${err.message}`);
@@ -64,7 +65,7 @@ module.exports = function(RED) {
                 const protocolHandler = node.configNode.getProtocolHandler();
 
                 // Update status
-                node.status({ fill: "blue", shape: "dot", text: "reading info..." });
+                node.status({ fill: "blue", shape: "dot", text: "reading info..." }); // bespoke text; reads device-info, not runtime data
 
                 // Read device info from inverter
                 const deviceInfo = await protocolHandler.readDeviceInfo();
@@ -83,16 +84,13 @@ module.exports = function(RED) {
                     host: node.host
                 };
 
-                // Success status
-                node.status({ fill: "green", shape: "dot", text: "ok" });
-                setTimeout(() => {
-                    node.status({ fill: "grey", shape: "ring", text: "ready" });
-                }, 2000);
+                // Success status (transient ok → ready after STATUS_RESET_MS).
+                setTransientStatus(node);
 
                 send(outputMsg);
                 if (done) done();
             } catch (err) {
-                node.status({ fill: "red", shape: "ring", text: "error" });
+                node.status(STATUSES.error);
 
                 if (done) {
                     done(err);
