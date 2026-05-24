@@ -258,6 +258,44 @@ describe("ProtocolHandler", () => {
             expect(fake.listenerCount("error")).toBe(0);
         });
 
+        it("enforces absolute deadline even when bytes trickle in (#59)", async () => {
+            // Regression: previously, every chunk reset the timeout to a 100ms
+            // idle timer, so a peer that dribbled bytes every ~90ms could hold
+            // the request open past config.timeout indefinitely.
+            const EventEmitter = require("events");
+            const handler = new ProtocolHandler({
+                protocol: "tcp",
+                // Short absolute deadline; drip bytes slower than that but
+                // faster than IDLE_BYTES_TIMEOUT_MS (100ms) to exercise the bug.
+                timeout: 250
+            });
+            const fake = new EventEmitter();
+            fake.write = () => {};
+            handler.socket = fake;
+
+            const pending = handler.sendCommand(Buffer.from([0x01])); // no expectedLength
+
+            // Drip bytes at 70ms intervals — under the 100ms idle window so
+            // the old code would never have settled via idle either. With the
+            // fix, the 250ms absolute deadline still wins.
+            const dripHandles = [];
+            for (const delay of [70, 140, 210, 280, 350, 420]) {
+                dripHandles.push(setTimeout(() => fake.emit("data", Buffer.from([0xAA])), delay));
+            }
+            // Ensure every scheduled drip is cancelled once the promise settles
+            // so it cannot leak into the next test.
+            pending.catch(() => {}).finally(() => dripHandles.forEach(clearTimeout));
+
+            const start = Date.now();
+            await expect(pending).rejects.toThrow(/timeout/i);
+            // Belt-and-suspenders: clear synchronously after the promise settles.
+            dripHandles.forEach(clearTimeout);
+
+            const elapsed = Date.now() - start;
+            expect(elapsed).toBeLessThan(1000);
+            expect(elapsed).toBeGreaterThanOrEqual(200);
+        });
+
         it("rejects fast when TCP socket emits 'close' mid-request (#58)", async () => {
             const EventEmitter = require("events");
             const handler = new ProtocolHandler({ protocol: "tcp", timeout: 5000 });
