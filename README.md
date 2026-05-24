@@ -378,6 +378,29 @@ See the [examples](./examples/) folder for more usage examples.
 
 The node may also work with white-label inverters using the same communication protocols.
 
+## Security & Trust Model
+
+For the full policy and how to report a vulnerability, see [SECURITY.md](./SECURITY.md).
+
+
+GoodWe inverters use AA55 (16-bit byte-sum checksum) and Modbus TCP/RTU (CRC16) framing on the local network. Both are **error-detection codes, not authentication** — anyone with the publicly documented protocol can fabricate a syntactically valid frame, and UDP source IPs are spoofable.
+
+**What this package does to mitigate spoofing:**
+- The `goodwe-discover` node, by default, rejects discovery responses whose source IP is outside the local subnet of any of the Node-RED host's network interfaces (`isLocalSubnet` filter). Opt out via `options.acceptAnySource: true` only if you knowingly need routed discovery and accept the trust boundary that creates.
+- Discovery and runtime reads validate AA55 / Modbus framing (length + checksum) before parsing, so random garbage cannot corrupt the parser. This does **not** prove the responder is the real inverter — the checksum is unkeyed.
+
+**What you must do:**
+- Do not run Node-RED on an L2 segment shared with untrusted devices when you rely on GoodWe data for automation (load-shedding, EV charging schedules, battery dispatch). A hostile device on the same network can in principle inject plausible sensor values.
+- Treat data received from the inverter as untrusted input. Validate plausibility downstream when the values drive consequential decisions (e.g. SoC must be 0–100, energy counters monotonic except after explicit reset, etc.).
+- If your inverter is on a separate VLAN or a routed segment, prefer that — and use the `acceptAnySource: true` opt-out consciously, pinning the inverter IP via DHCP reservation.
+
+**What this package does *not* protect against:**
+- A hostile device on the same L2 segment that forges AA55/Modbus frames with valid checksums.
+- TCP session hijacking by an L2 attacker.
+- DNS or ARP spoofing redirecting the configured host to an attacker.
+
+These are inherent to the protocol, not specific to this implementation.
+
 ## Development
 
 ### Prerequisites
