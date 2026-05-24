@@ -386,6 +386,29 @@ describe("discovery helper functions", () => {
         }
     });
 
+    it("should not throw 'Not running' when send fails before bind completes", async () => {
+        // Regression: lib/protocol.js cleanup() previously called socket.close()
+        // unconditionally. On Node 24+, dgram.close() throws "Not running" when
+        // called on an unbound socket — which happens when send() errors out
+        // (e.g. DNS resolution failure on an invalid broadcast address) before
+        // bind() finishes. The cleanup should be idempotent and tolerate an
+        // already-closed or never-bound socket.
+        let caught;
+        try {
+            await discoverInverters({
+                timeout: 100,
+                broadcastAddress: "invalid"
+            });
+        } catch (err) {
+            caught = err;
+        }
+        // The promise must settle one way or the other — what we explicitly do
+        // NOT want is the process crashing on an uncaught "Not running" throw.
+        if (caught) {
+            expect(caught.message).not.toContain("Not running");
+        }
+    });
+
     it("should parse device info from AA55 payload", () => {
         // Build a mock device info payload
         const payload = Buffer.alloc(53);
