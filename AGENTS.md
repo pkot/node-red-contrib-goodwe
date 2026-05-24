@@ -113,19 +113,18 @@ This is what the user expects me to do, in order:
 5. **Commit**: follow `CONTRIBUTING.md`'s conventional commit format (`feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, `test:`). First line imperative, ≤72 chars. Body explains the WHY and references the issue (`Closes #N`). If your harness adds a `Co-Authored-By` trailer, that's fine — don't mandate it for assistants that don't.
 6. **Push + open PR**: `gh pr create --base main`
    - Body includes: Summary / Root cause (if bug) / Fix / Test plan checklist
-7. **Skip the `@copilot-pull-request-reviewer` mention**. Copilot auto-review is now enabled at the repo level — it self-assigns on PR open. The `@mention` was triggering the SWE agent, not the reviewer, throughout most of the session.
-8. **Wait for ALL of**:
+7. **Wait for ALL of**:
    - CI green on all 4 Node versions (use the `Monitor` tool with the until-CI-completes pattern)
    - Copilot review submitted (typically ~2 min after PR open; `gh pr view <pr> --json reviews,reviewRequests,comments`)
-9. **If Copilot found something**:
+8. **If Copilot found something**:
    - Read inline comments: `gh api repos/<repo>/pulls/<pr>/comments`
    - Fix in a follow-up commit
    - Reply on the review thread via `gh api -X POST .../pulls/<pr>/comments/<id>/replies`
    - Re-wait for CI on the fixup commit
-10. **Squash-merge**: `gh pr merge <pr> --squash --delete-branch`
-11. **CRITICAL: wait for POST-merge CI on main**. The squash-merge produces a NEW SHA; CI runs against it. Past flakes (e.g. #84 cleanup race) only surfaced on the post-merge run. Verify before declaring done.
+9. **Squash-merge**: `gh pr merge <pr> --squash --delete-branch`
+10. **CRITICAL: wait for POST-merge CI on main**. The squash-merge produces a NEW SHA; CI runs against it. Past flakes (e.g. #84 cleanup race) only surfaced on the post-merge run. Verify before declaring done.
 
-**Don't skip step 11.** The first time I did, an actual bug shipped to main and we had to do PR #84 to fix it.
+**Don't skip step 10.** The first time I did, an actual bug shipped to main and we had to do PR #84 to fix it.
 
 ---
 
@@ -146,6 +145,8 @@ while true; do
 done
 echo "ALL CHECKS DONE PR$pr"
 ```
+
+Create it as a bash script so that it can be invoked without asking user for a confirmation every time.
 
 For post-merge CI, key on the merge commit SHA (not the PR's head):
 ```bash
@@ -208,7 +209,7 @@ The Python library `marcelblijleven/goodwe` is upstream for the protocol/sensor 
 ## Things that bit me — read before doing similar work
 
 1. **Squash-merge produces a NEW SHA**. Post-merge CI runs against that SHA, not the PR's head. Always wait for the post-merge run.
-2. **`@copilot-pull-request-reviewer` was the SWE agent**, not the reviewer. Real Copilot code review requires it enabled at the repo level (it is now). Auto-review fires ~2 min after PR open. Use `gh pr view --json reviews,reviewRequests,comments` to verify, not just CI bucket.
+2. **Copilot** auto-review fires ~2 min after PR open. Use `gh pr view --json reviews,reviewRequests,comments` to verify, not just CI bucket.
 3. **`npm` glob expansion differs by shell**. Bash without `globstar` doesn't expand `**` recursively; zsh does. Always use explicit directory args for `eslint` / `find` in CI scripts.
 4. **`os.networkInterfaces()` for trust filters** — used in `isLocalSubnet`. Fail closed on parse errors.
 5. **Jest coverage threshold can block merges** even if all tests pass — check `jest.config.js` if a green-test PR fails CI.
