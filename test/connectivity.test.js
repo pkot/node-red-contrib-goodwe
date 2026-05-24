@@ -590,6 +590,40 @@ describe("discovery helper functions", () => {
         }
     });
 
+    describe("commAddr validation (#74)", () => {
+        it("accepts auto / empty / undefined and uses family default", () => {
+            expect(() => new ProtocolHandler({ commAddr: "auto", family: "ET" })).not.toThrow();
+            expect(() => new ProtocolHandler({ commAddr: "", family: "ET" })).not.toThrow();
+            expect(() => new ProtocolHandler({ family: "ET" })).not.toThrow();
+        });
+
+        it("accepts in-range hex string / number", () => {
+            expect(() => new ProtocolHandler({ commAddr: "F7", family: "ET" })).not.toThrow();
+            expect(() => new ProtocolHandler({ commAddr: 0x7F, family: "DT" })).not.toThrow();
+            expect(() => new ProtocolHandler({ commAddr: "00", family: "ET" })).not.toThrow();
+            expect(() => new ProtocolHandler({ commAddr: "FF", family: "ET" })).not.toThrow();
+        });
+
+        it("rejects out-of-range values with INVALID_CONFIG", () => {
+            try {
+                new ProtocolHandler({ commAddr: "1FF", family: "ET" }); // 511
+                throw new Error("expected throw");
+            } catch (err) {
+                expect(err.code).toBe("INVALID_CONFIG");
+                expect(err.message).toContain("0x00-0xFF");
+            }
+        });
+
+        it("rejects unparseable values with INVALID_CONFIG", () => {
+            try {
+                new ProtocolHandler({ commAddr: "garbage", family: "ET" });
+                throw new Error("expected throw");
+            } catch (err) {
+                expect(err.code).toBe("INVALID_CONFIG");
+            }
+        });
+    });
+
     describe("protocol-validation errors carry PROTOCOL_ERROR code (#67)", () => {
         it("malformed AA55 frame surfaces as PROTOCOL_ERROR, not READ_ERROR", () => {
             const handler = new ProtocolHandler({ protocol: "udp", family: "ES" });
