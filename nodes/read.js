@@ -168,6 +168,18 @@ module.exports = function(RED) {
             node.warn(`Protocol error: ${err.message}`);
         });
 
+        // Stop polling immediately when the config node signals shutdown so
+        // we don't race with its protocolHandler teardown (#71). Without
+        // this, a polling tick can re-lazy-create a fresh handler against
+        // stale state during the deploy window.
+        node.on("goodwe:shutdown", function() {
+            if (node.pollingInterval) {
+                clearInterval(node.pollingInterval);
+                node.pollingInterval = null;
+            }
+            node.status({ fill: "grey", shape: "ring", text: "config closing" });
+        });
+
         /**
          * Perform read operation
          * @param {Object} msg - Input message

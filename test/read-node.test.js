@@ -631,6 +631,53 @@ describe("GoodWe Read Node", function () {
         });
     });
 
+    describe("Polling lifecycle vs config-node close (#71)", function () {
+
+        it("clears polling interval when config node emits goodwe:shutdown", function (done) {
+            const flow = createReadFlow({ polling: 1 });
+
+            helper.load([configNode, readNode], flow, function () {
+                const n1 = helper.getNode("n1");
+                expect(n1.pollingInterval).toBeDefined();
+
+                // Simulate the config-node close handler firing the shutdown
+                // event. The read node should stop polling and null the
+                // interval handle.
+                n1.emit("goodwe:shutdown");
+
+                setImmediate(() => {
+                    try {
+                        expect(n1.pollingInterval).toBeNull();
+                        done();
+                    } catch (err) {
+                        done(err);
+                    }
+                });
+            });
+        });
+
+        it("config-node close (helper.unload) emits goodwe:shutdown to users", function (done) {
+            const flow = createReadFlow();
+            helper.load([configNode, readNode], flow, function () {
+                const n1 = helper.getNode("n1");
+
+                let shutdownSeen = false;
+                n1.on("goodwe:shutdown", () => { shutdownSeen = true; });
+
+                // Driver Node-RED's normal close path. Unload triggers each
+                // node's "close" handler in dependency order.
+                helper.unload().then(() => {
+                    try {
+                        expect(shutdownSeen).toBe(true);
+                        done();
+                    } catch (err) {
+                        done(err);
+                    }
+                });
+            });
+        });
+    });
+
     describe("Error Handling", function () {
 
         it("should handle read errors gracefully", function (done) {
