@@ -359,8 +359,8 @@ describe("goodwe-discover node", () => {
                 
                 n2.on("input", (msg) => {
                     try {
-                        expect(msg._timestamp).toBeDefined();
-                        const timestamp = new Date(msg._timestamp);
+                        expect(msg.timestamp).toBeDefined();
+                        const timestamp = new Date(msg.timestamp);
                         expect(timestamp).toBeInstanceOf(Date);
                         expect(isNaN(timestamp.getTime())).toBe(false);
                         complete();

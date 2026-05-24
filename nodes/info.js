@@ -76,8 +76,9 @@ module.exports = function(RED) {
                 const outputMsg = Object.assign({}, msg);
                 outputMsg.payload = deviceInfo;
                 outputMsg.topic = "goodwe/device_info";
-                outputMsg._timestamp = new Date().toISOString();
-                outputMsg._inverter = {
+                // Canonical worker-node metadata (#65).
+                outputMsg.timestamp = new Date().toISOString();
+                outputMsg.inverter = {
                     family: node.family,
                     host: node.host
                 };
