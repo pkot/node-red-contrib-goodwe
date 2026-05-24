@@ -10,6 +10,7 @@ const {
     typeReaders,
     getSensors,
     getFamilyConfig,
+    getSupportedFamilies,
     parseSensorData,
     buildSensorMetadata,
     ET_SENSORS,
@@ -287,6 +288,34 @@ describe("getFamilyConfig", () => {
 
     test("returns null for unknown family", () => {
         expect(getFamilyConfig("XYZ")).toBeNull();
+    });
+});
+
+// ── getSupportedFamilies tests (#69) ────────────────────────────────────────
+
+describe("getSupportedFamilies (#69)", () => {
+    test("returns all keys present in FAMILY_CONFIGS", () => {
+        const families = getSupportedFamilies();
+        expect(families).toContain("ET");
+        expect(families).toContain("DT");
+        expect(families).toContain("ES");
+        expect(families).toContain("D-NS");
+        // Every returned family must be resolvable through getFamilyConfig
+        // so callers can rely on the list as a single source of truth.
+        for (const f of families) {
+            expect(getFamilyConfig(f)).not.toBeNull();
+        }
+    });
+
+    test("errors.js UNSUPPORTED_FAMILY suggestion is built from this list", () => {
+        const { SUGGESTION_GENERATORS } = require("../lib/errors");
+        const suggestions = SUGGESTION_GENERATORS.UNSUPPORTED_FAMILY({ family: "BOGUS" });
+        const families = getSupportedFamilies();
+        const supportedLine = suggestions.find(s => s.includes("Supported families"));
+        expect(supportedLine).toBeDefined();
+        for (const f of families) {
+            expect(supportedLine).toContain(f);
+        }
     });
 });
 
