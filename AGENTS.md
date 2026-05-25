@@ -34,23 +34,25 @@ nodes/
 
 test/
   *.test.js       jest specs; helper.init via node-red-node-test-helper
-  README.md       Contributor quick-start (test patterns, debugging tips)
+  README.md       Single test guide — quick-start + full reference (framework, mocking, TDD, CI)
 
-docs/TESTING.md   Test framework + TDD/CI guide
+nodes/README.md   Per-node settings, I/O schemas, error handling
+examples/README.md  Importable example flows + inline copy/paste recipes
 lib/README.md     Protocol API reference (shipped in npm tarball)
 ```
 
 Canonical docs (don't add new ones without a clear reason):
 
-- `README.md` — user-facing
+- `README.md` — user-facing landing (features, install, quick start)
 - `SECURITY.md` — trust model + vulnerability reporting
 - `CONTRIBUTING.md` — human-contributor workflow
-- `docs/TESTING.md` — test framework guide
+- `test/README.md` — testing guide (quick-start + full reference)
+- `nodes/README.md` — per-node configuration / I/O reference
+- `examples/README.md` — example-flow walkthroughs
 - `lib/README.md` — protocol API reference (shipped to npm)
-- `test/README.md` — test quick-start
 - `AGENTS.md` — this file (AI-assistant operating guide)
 
-When tempted to add a doc that describes code, **stop**. Code+tests are the spec — the 9-file `docs/` cleanup in #115 deleted 5000 lines of stale design docs precisely because they described code that had since changed.
+When tempted to add a doc that describes code, **stop**. Code+tests are the spec — the 9-file `docs/` cleanup in #115 (and the follow-up that removed `docs/` entirely) deleted thousands of lines of stale design docs precisely because they described code that had since changed.
 
 ---
 
@@ -162,7 +164,7 @@ rid=$(gh run list -R <repo> --workflow CI --branch main --limit 5 --json databas
 - **`setInterval` in tests leaks** across tests if not explicitly cleared in a `finally`. Prefer scheduled `setTimeout`s with handle-tracking.
 - **Mocking sockets**: replace `handler.socket` with a fake `EventEmitter` that has `.send()` / `.write()`. The handler's listeners then drive predictably. See `test/connectivity.test.js` for the established patterns.
 - **Mocking the inner protocol**: replace `handler._sendCommandImpl` with a controllable async function. Useful for testing the serialization queue (#56) or retry semantics (#62) without socket setup.
-- **Jest coverage threshold lives in `jest.config.js`**. Currently 70%/70%/70%/65% (statements/functions/lines/branches). Branches is the only one below default — bumped down post-legacy-node-removal because branch coverage in `lib/protocol.js` dropped; raise back to 70% as protocol-layer tests grow.
+- **Jest coverage threshold lives in `jest.config.js`**. Currently 70% across all four metrics (statements/functions/lines/branches). Actual coverage runs well above (≈78% branches, ≈84% statements at the time of writing) — there's headroom, but new code still needs tests to keep it that way.
 
 ---
 
