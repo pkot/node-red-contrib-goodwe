@@ -14,7 +14,7 @@ A Node-RED port of the [marcelblijleven/goodwe](https://github.com/marcelblijlev
 - Discover inverters on the local network via UDP broadcast
 - Support for ET, EH, BT, BH, ES, EM, BP, DT, MS, D-NS, XS families
 - Shared configuration node for managing multiple inverters
-- Source-IP filtering and frame validation against LAN spoofing (see [SECURITY.md](./SECURITY.md))
+- Source-IP filtering and frame validation against LAN spoofing (see [SECURITY.md](https://github.com/pkot/node-red-contrib-goodwe/blob/main/SECURITY.md))
 
 ## Installation
 
@@ -65,15 +65,15 @@ ET, EH, BT, BH, GEH (hybrid / Modbus) · DT, MS, D-NS, XS, KMT (grid-tie / Modbu
 
 GoodWe AA55 and Modbus framing use error-detection codes, not authentication. Anyone on the same L2 segment with the public protocol spec can fabricate a syntactically valid frame. This package mitigates the most common spoofing vectors (subnet filtering on discovery, frame validation, request serialization) but doesn't make the protocol authenticated.
 
-Full trust model + what to do about it: [`SECURITY.md`](./SECURITY.md).
+Full trust model + what to do about it: [`SECURITY.md`](https://github.com/pkot/node-red-contrib-goodwe/blob/main/SECURITY.md).
 
 ## Development & contributing
 
 - Node.js ≥ 20.19, npm ≥ 6
 - Clone, `npm install`, `npm test`
-- Test framework and patterns: [`test/README.md`](./test/README.md)
-- Workflow, code conventions, commit format: [`CONTRIBUTING.md`](./CONTRIBUTING.md)
-- For AI assistants working on the repo: [`AGENTS.md`](./AGENTS.md)
+- Test framework and patterns: [`test/README.md`](https://github.com/pkot/node-red-contrib-goodwe/blob/main/test/README.md)
+- Workflow, code conventions, commit format: [`CONTRIBUTING.md`](https://github.com/pkot/node-red-contrib-goodwe/blob/main/CONTRIBUTING.md)
+- For AI assistants working on the repo: [`AGENTS.md`](https://github.com/pkot/node-red-contrib-goodwe/blob/main/AGENTS.md)
 
 ## License
 
