@@ -34,23 +34,25 @@ nodes/
 
 test/
   *.test.js       jest specs; helper.init via node-red-node-test-helper
-  README.md       Contributor quick-start (test patterns, debugging tips)
+  README.md       Single test guide — quick-start + full reference (framework, mocking, TDD, CI)
 
-docs/TESTING.md   Test framework + TDD/CI guide
+nodes/README.md   Per-node settings, I/O schemas, error handling
+examples/README.md  Importable example flows + inline copy/paste recipes
 lib/README.md     Protocol API reference (shipped in npm tarball)
 ```
 
 Canonical docs (don't add new ones without a clear reason):
 
-- `README.md` — user-facing
+- `README.md` — user-facing landing (features, install, quick start)
 - `SECURITY.md` — trust model + vulnerability reporting
 - `CONTRIBUTING.md` — human-contributor workflow
-- `docs/TESTING.md` — test framework guide
+- `test/README.md` — testing guide (quick-start + full reference)
+- `nodes/README.md` — per-node configuration / I/O reference
+- `examples/README.md` — example-flow walkthroughs
 - `lib/README.md` — protocol API reference (shipped to npm)
-- `test/README.md` — test quick-start
 - `AGENTS.md` — this file (AI-assistant operating guide)
 
-When tempted to add a doc that describes code, **stop**. Code+tests are the spec — the 9-file `docs/` cleanup in #115 deleted 5000 lines of stale design docs precisely because they described code that had since changed.
+When tempted to add a doc that describes code, **stop**. Code+tests are the spec — the 9-file `docs/` cleanup in #115 (and the follow-up that removed `docs/` entirely) deleted thousands of lines of stale design docs precisely because they described code that had since changed.
 
 ---
 

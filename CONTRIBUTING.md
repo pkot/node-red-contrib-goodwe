@@ -42,7 +42,7 @@ This project follows TDD principles. When adding new features:
 
 ### Running Tests
 
-See **[test/README.md](./test/README.md)** for a quick start guide, or **[docs/TESTING.md](./docs/TESTING.md)** for comprehensive testing documentation.
+See **[test/README.md](./test/README.md)** — quick-start at the top, full reference (test helper API, mocking patterns, CI, troubleshooting) below.
 
 ```bash
 # Run all tests
@@ -58,10 +58,9 @@ npm test -- --coverage
 npm test -- test/read-node.test.js
 ```
 
-**Testing Resources:**
-- 📖 **Quick Start**: [test/README.md](./test/README.md) - Common patterns and utilities
-- 📖 **Full Guide**: [docs/TESTING.md](./docs/TESTING.md) - Comprehensive testing guide
-- 🧪 **Test Utilities**: [test/test-utils.js](./test/test-utils.js) - Helper functions
+**Testing resources:**
+- [test/README.md](./test/README.md) — single testing guide (quick-start + full reference)
+- [test/test-utils.js](./test/test-utils.js) — helper functions used across specs
 
 ### Code Quality
 
