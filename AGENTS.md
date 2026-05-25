@@ -164,7 +164,7 @@ rid=$(gh run list -R <repo> --workflow CI --branch main --limit 5 --json databas
 - **`setInterval` in tests leaks** across tests if not explicitly cleared in a `finally`. Prefer scheduled `setTimeout`s with handle-tracking.
 - **Mocking sockets**: replace `handler.socket` with a fake `EventEmitter` that has `.send()` / `.write()`. The handler's listeners then drive predictably. See `test/connectivity.test.js` for the established patterns.
 - **Mocking the inner protocol**: replace `handler._sendCommandImpl` with a controllable async function. Useful for testing the serialization queue (#56) or retry semantics (#62) without socket setup.
-- **Jest coverage threshold lives in `jest.config.js`**. Currently 70%/70%/70%/65% (statements/functions/lines/branches). Branches is the only one below default — bumped down post-legacy-node-removal because branch coverage in `lib/protocol.js` dropped; raise back to 70% as protocol-layer tests grow.
+- **Jest coverage threshold lives in `jest.config.js`**. Currently 70% across all four metrics (statements/functions/lines/branches). Actual coverage runs well above (≈78% branches, ≈84% statements at the time of writing) — there's headroom, but new code still needs tests to keep it that way.
 
 ---
 

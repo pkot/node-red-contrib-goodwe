@@ -9,14 +9,14 @@ Shared configuration node. `goodwe-read` and `goodwe-info` reference one of thes
 **Basic settings:**
 - **Name** — friendly identifier
 - **Host** — IP address or hostname of the inverter (required)
-- **Protocol** — `udp` or `tcp` (Modbus TCP)
+- **Protocol** — `udp` or `modbus` (Modbus TCP — the UI label is "Modbus TCP" but the stored value is `modbus`)
 - **Port** — communication port. 8899 for UDP, 502 for Modbus TCP
 - **Inverter Family** — ET, EH, BT, BH, ES, EM, BP, DT, MS, D-NS, XS
 
 **Advanced settings:**
 - **Timeout** — response timeout in ms (default 1000, minimum 100)
 - **Retries** — retry attempts (default 3, minimum 0)
-- **Comm Address** — Modbus unit ID: `auto` (family default), `F7`, or `7F`
+- **Comm Address** — Modbus unit ID: `auto` (family default), `0xF7`, or `0x7F`
 - **Keep Alive** — keep TCP connection open between requests (default `true`)
 
 Edits to the config node propagate to every worker referencing it; field updates are picked up on the next read without redeploying the workers (#60).
@@ -148,7 +148,7 @@ UDP-broadcast discovery of GoodWe inverters on the local network.
 
 **Node settings:**
 - **Name** — display name
-- **Timeout** — discovery window in ms (default 5000, min 100, max 300000)
+- **Timeout** — discovery window in ms (default 5000, UI minimum 1000, max 300000). Flow-imported configs are floored at 100 ms by the runtime as a defensive parse, but the editor input rejects anything under 1000.
 - **Broadcast Address** — default `255.255.255.255` (limited broadcast — stays on the local segment). Directed broadcasts like `192.168.1.255` are accepted; non-private addresses are rejected for safety (see [SECURITY.md](../SECURITY.md)).
 
 **Input:** any message triggers discovery.

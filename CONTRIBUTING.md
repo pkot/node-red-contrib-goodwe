@@ -60,7 +60,6 @@ npm test -- test/read-node.test.js
 
 **Testing resources:**
 - [test/README.md](./test/README.md) — single testing guide (quick-start + full reference)
-- [test/test-utils.js](./test/test-utils.js) — helper functions used across specs
 
 ### Code Quality
 

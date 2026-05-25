@@ -83,7 +83,7 @@ See `test/read-node.test.js`, `test/info-node.test.js`, `test/discover-node.test
 This project follows test-driven development:
 
 - All features have tests before implementation
-- Coverage thresholds (enforced by CI): statements/functions/lines ≥ 70%, branches ≥ 65%
+- Coverage thresholds (enforced by CI): ≥ 70% across statements / functions / lines / branches
 - CI runs on every push and PR against `main` (Node 20/22/24/26 matrix)
 
 ## Test framework
@@ -279,14 +279,7 @@ Current workflow: `.github/workflows/ci.yml`.
 
 ### Coverage thresholds (in `jest.config.js`)
 
-| Metric | Floor |
-|---|---|
-| Statements | 70% |
-| Functions | 70% |
-| Lines | 70% |
-| Branches | 65% |
-
-Branches is below the others because removing the legacy mock-driven tests in #83 dropped `lib/protocol.js` branch coverage. Raise back to 70% as protocol-layer tests grow.
+All four metrics share the same floor: **70%**. Current coverage sits comfortably above (statements ≈84%, branches ≈78%) — the floor is the safety net, not the target.
 
 ## Troubleshooting
 
