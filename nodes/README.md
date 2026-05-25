@@ -149,7 +149,7 @@ UDP-broadcast discovery of GoodWe inverters on the local network.
 **Node settings:**
 - **Name** — display name
 - **Timeout** — discovery window in ms (default 5000, UI minimum 1000, max 300000). Flow-imported configs are floored at 100 ms by the runtime as a defensive parse, but the editor input rejects anything under 1000.
-- **Broadcast Address** — default `255.255.255.255` (limited broadcast — stays on the local segment). Directed broadcasts like `192.168.1.255` are accepted; non-private addresses are rejected for safety (see [SECURITY.md](../SECURITY.md)).
+- **Broadcast Address** — default `255.255.255.255` (limited broadcast — stays on the local segment). Directed broadcasts like `192.168.1.255` are accepted; non-private addresses are rejected for safety (see [SECURITY.md](https://github.com/pkot/node-red-contrib-goodwe/blob/main/SECURITY.md)).
 
 **Input:** any message triggers discovery.
 
