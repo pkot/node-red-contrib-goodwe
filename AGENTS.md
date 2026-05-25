@@ -174,7 +174,7 @@ rid=$(gh run list -R <repo> --workflow CI --branch main --limit 5 --json databas
 - `.github/workflows/copilot-setup-steps.yml`: separately maintained for the Copilot SWE agent environment. Both must stay consistent.
 - `.github/dependabot.yml`: npm (weekly, max 5 PRs, dev-deps grouped) + github-actions (weekly).
 
-**Common CI gotcha**: `eslint nodes/**/*.js` (with shell glob) expands non-recursively in bash without `globstar`. Use directory targets (`eslint nodes lib test`) instead. Cost me an hour during the legacy node removal.
+**Common CI gotcha**: `eslint nodes/**/*.js` (with shell glob) expands non-recursively in bash without `globstar`. Use directory targets (`eslint nodes lib test`) instead.
 
 ---
 
@@ -217,7 +217,6 @@ The Python library `marcelblijleven/goodwe` is upstream for the protocol/sensor 
 5. **Jest coverage threshold can block merges** even if all tests pass — check `jest.config.js` if a green-test PR fails CI.
 6. **ESLint 9+ `no-unused-vars.caughtErrors` defaults to `"all"`**. Set `caughtErrorsIgnorePattern: "^_"` to honor the underscore convention.
 7. **Node 24+ dgram throws "Not running"** on close of unbound socket. Wrap socket cleanup in try/catch; treat as idempotent.
-8. **The legacy `goodwe` node was removed in #83**. Any reference to it in code, tests, docs, or examples is stale. The 4-node architecture is the current state.
 
 ---
 
