@@ -42,14 +42,7 @@ jobs:
       
     - name: Run tests
       run: npm test -- --coverage
-      
-    - name: Upload coverage to Codecov
-      if: contains(fromJson('["20.x","22.x","24.x"]'), matrix.node-version)
-      uses: codecov/codecov-action@v6
-      with:
-        files: ./coverage/lcov.info
-        fail_ci_if_error: false
-        
+
     - name: Archive test results
       if: always()
       uses: actions/upload-artifact@v7

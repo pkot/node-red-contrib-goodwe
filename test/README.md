@@ -272,7 +272,7 @@ GitHub Actions runs every push and PR against `main`:
 - Matrix: Node 20.x / 22.x / 24.x / 26.x
 - `fail-fast: false` (one version failing doesn't abort the others)
 - Steps: `npm ci` → `npm run lint` → `npm test -- --coverage`
-- Coverage uploaded to Codecov on the 20.x/22.x/24.x legs (skip 26.x to avoid 4 identical uploads)
+- Coverage is generated locally per job (Jest's threshold in `jest.config.js` is the gate); per-job artifacts are uploaded as `test-results-<node-version>` with 7-day retention
 - `concurrency` group cancels superseded PR runs
 
 Current workflow: `.github/workflows/ci.yml`.
