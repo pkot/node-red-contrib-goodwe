@@ -55,7 +55,7 @@
     "nise": "^6.1.5",
     "picomatch": "^4.0.4",
     "brace-expansion": "^2.0.2",
-    "ip-address": "^10.2.0",
+    "ip-address": "^10.4.0",
     "diff": "^8.0.3"
   }
 }
